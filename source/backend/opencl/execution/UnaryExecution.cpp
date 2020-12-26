@@ -143,8 +143,34 @@ public:
     }
 };
 
+class CastCreator : public OpenCLBackend::Creator {
+public:
+    virtual Execution* onCreate(const std::vector<Tensor*>& inputs, const std::vector<Tensor*>& outputs,
+                                const MNN::Op* op, Backend* backend) const override {
+        auto cast = op->main_as_CastParam();
+
+        const auto &inputDataType = inputs[0]->getType();
+
+        /*if (cast->dstT() == MNN::DataType_DT_FLOAT && halide_type_of<int32_t>() == inputDataType) {
+            return new UnaryExecution("convert_float4(in)", backend);
+        } else if (cast->dstT() == MNN::DataType_DT_FLOAT && halide_type_of<int8_t>() == inputDataType) {
+            return new UnaryExecution("convert_float4(in)", backend);
+        } else {
+            MNN_PRINT("Don't support cast form %d to %d\n", cast->srcT(), cast->dstT());
+        }*/
+        if (cast->dstT() == MNN::DataType_DT_FLOAT) {
+            return new UnaryExecution("convert_float4(in)", backend);
+        } else if (cast->dstT() == MNN::DataType_DT_INT32) {
+            return new UnaryExecution("convert_int4(in)", backend);
+        }
+
+        return nullptr;
+    }
+};
+
 OpenCLCreatorRegister<UnaryCreator> __UnaryExecution(OpType_UnaryOp);
 OpenCLCreatorRegister<UnaryCreator> __SigmoidExecution(OpType_Sigmoid);
 OpenCLCreatorRegister<UnaryCreator> __TanhExecution(OpType_TanH);
+OpenCLCreatorRegister<CastCreator> __CastExecution(OpType_Cast);
 } // namespace OpenCL
 } // namespace MNN
