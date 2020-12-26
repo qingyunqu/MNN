@@ -219,13 +219,15 @@ public:
                 case BinaryOpOperation_POW:
                     return new EltwiseExecution(inputs, "pow(in0,in1)", op, backend);
                 case BinaryOpOperation_DIV:
-                    return new EltwiseExecution(inputs, "sign(in1)*in0/(fabs(in1)>(FLOAT4)((FLOAT)0.0000001)?fabs(in1):(FLOAT4)((FLOAT)0.0000001))", op, backend);
+                    return new EltwiseExecution(inputs, "sign(in1)*in0/fmax(fabs(in1),0.0000001)", op, backend);
                 case BinaryOpOperation_MAXIMUM:
                     return new EltwiseExecution(inputs, "in0>in1?in0:in1", op, backend);
                 case BinaryOpOperation_MINIMUM:
                     return new EltwiseExecution(inputs, "in0>in1?in1:in0", op, backend);
                 case BinaryOpOperation_REALDIV:
-                    return new EltwiseExecution(inputs, "sign(in1)*in0/(fabs(in1)>(FLOAT4)((FLOAT)0.0000001)?fabs(in1):(FLOAT4)((FLOAT)0.0000001))", op, backend);
+                    return new EltwiseExecution(inputs, "sign(in1)*in0/fmax(fabs(in1),0.0000001)", op, backend);
+                case BinaryOpOperation_GREATER_EQUAL:
+                    return new EltwiseExecution(inputs, "convert_float4(isgreaterequal(in0,in1))", op, backend);
                 default:
                     break;
             }

@@ -330,6 +330,7 @@ void Tensor::print() const {
     auto printee = this;
     bool device  = this->buffer().host == NULL && this->buffer().device != 0;
     if (device) {
+        MNN_PRINT("\nthis tensor is device tensor");
         printee = this->createHostTensorFromDevice(this, true);
     }
     auto buffer = printee->buffer().host;

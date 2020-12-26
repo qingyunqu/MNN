@@ -141,7 +141,7 @@ endif()
 
 # backend options
 option(MNN_METAL "Enable Metal" OFF)
-option(MNN_OPENCL "Enable OpenCL" OFF)
+option(MNN_OPENCL "Enable OpenCL" ON)
 option(MNN_OPENGL "Enable OpenGL" OFF)
 option(MNN_VULKAN "Enable Vulkan" OFF)
 option(MNN_ARM82 "Enable ARM82" OFF)
@@ -158,7 +158,7 @@ endif()
 
 # target options
 option(MNN_BUILD_BENCHMARK "Build benchmark or not" OFF)
-option(MNN_BUILD_TEST "Build tests or not" OFF)
+option(MNN_BUILD_TEST "Build tests or not" ON)
 option(MNN_BUILD_FOR_ANDROID_COMMAND "Build from command" OFF)
 option(MNN_USE_LOGCAT "Use Logcat intead of print for info" ON)
 set (MNN_HIDDEN FALSE)
