@@ -1,0 +1,377 @@
+Processor	: AArch64 Processor rev 14 (aarch64)
+processor	: 0
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 1
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 2
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 3
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 4
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 5
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 6
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x1
+CPU part	: 0xd0d
+CPU revision	: 0
+
+processor	: 7
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x1
+CPU part	: 0xd0d
+CPU revision	: 0
+
+Hardware	: Qualcomm Technologies, Inc SM7225
+
+Build Flags: ABI=arm64-v8a OpenCL=OFF
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 138 
+epoch: 0  10 / 60000 loss: 87 lr: 0.00999326 time: 1087.54 ms / 9 iter
+epoch: 0  20 / 60000 loss: 2.30259 lr: 0.00998577 time: 1302.48 ms / 10 iter
+epoch: 0  30 / 60000 loss: 2.30259 lr: 0.0099783 time: 1318.65 ms / 10 iter
+epoch: 0  40 / 60000 loss: 2.30259 lr: 0.00997085 time: 1315.96 ms / 10 iter
+epoch: 0  50 / 60000 loss: 2.30259 lr: 0.00996341 time: 1290.87 ms / 10 iter
+epoch: 0  60 / 60000 loss: 2.30259 lr: 0.00995598 time: 1319.95 ms / 10 iter
+epoch: 0  70 / 60000 loss: 2.30259 lr: 0.00994856 time: 1244.62 ms / 10 iter
+epoch: 0  80 / 60000 loss: 2.30259 lr: 0.00994116 time: 1276.05 ms / 10 iter
+epoch: 0  90 / 60000 loss: 2.30259 lr: 0.00993377 time: 1245.43 ms / 10 iter
+epoch: 0  100 / 60000 loss: 2.30259 lr: 0.00992639 time: 1253.52 ms / 10 iter
+epoch: 0  110 / 60000 loss: 2.30259 lr: 0.00991902 time: 1277.06 ms / 10 iter
+epoch: 0  120 / 60000 loss: 2.30259 lr: 0.00991167 time: 1260.94 ms / 10 iter
+epoch: 0  130 / 60000 loss: 2.30259 lr: 0.00990433 time: 1277.11 ms / 10 iter
+epoch: 0  140 / 60000 loss: 2.30259 lr: 0.009897 time: 1238.31 ms / 10 iter
+Training latency of Lenet is : 127.054619 ms (batchsize is 1)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Lenet_1.mnn
+test: 100 / 10000
+test: 200 / 10000
+test: 300 / 10000
+test: 400 / 10000
+test: 500 / 10000
+test: 600 / 10000
+test: 700 / 10000
+test: 800 / 10000
+test: 900 / 10000
+test: 1000 / 10000
+test: 1100 / 10000
+test: 1200 / 10000
+test: 1300 / 10000
+test: 1400 / 10000
+test: 1500 / 10000
+test: 1600 / 10000
+test: 1700 / 10000
+test: 1800 / 10000
+test: 1900 / 10000
+test: 2000 / 10000
+test: 2100 / 10000
+test: 2200 / 10000
+test: 2300 / 10000
+test: 2400 / 10000
+test: 2500 / 10000
+test: 2600 / 10000
+test: 2700 / 10000
+test: 2800 / 10000
+test: 2900 / 10000
+test: 3000 / 10000
+test: 3100 / 10000
+test: 3200 / 10000
+test: 3300 / 10000
+test: 3400 / 10000
+test: 3500 / 10000
+test: 3600 / 10000
+test: 3700 / 10000
+test: 3800 / 10000
+test: 3900 / 10000
+test: 4000 / 10000
+test: 4100 / 10000
+test: 4200 / 10000
+test: 4300 / 10000
+test: 4400 / 10000
+test: 4500 / 10000
+test: 4600 / 10000
+test: 4700 / 10000
+test: 4800 / 10000
+test: 4900 / 10000
+test: 5000 / 10000
+test: 5100 / 10000
+test: 5200 / 10000
+test: 5300 / 10000
+test: 5400 / 10000
+test: 5500 / 10000
+test: 5600 / 10000
+test: 5700 / 10000
+test: 5800 / 10000
+test: 5900 / 10000
+test: 6000 / 10000
+test: 6100 / 10000
+test: 6200 / 10000
+test: 6300 / 10000
+test: 6400 / 10000
+test: 6500 / 10000
+test: 6600 / 10000
+test: 6700 / 10000
+test: 6800 / 10000
+test: 6900 / 10000
+test: 7000 / 10000
+test: 7100 / 10000
+test: 7200 / 10000
+test: 7300 / 10000
+test: 7400 / 10000
+test: 7500 / 10000
+test: 7600 / 10000
+test: 7700 / 10000
+test: 7800 / 10000
+test: 7900 / 10000
+test: 8000 / 10000
+test: 8100 / 10000
+test: 8200 / 10000
+test: 8300 / 10000
+test: 8400 / 10000
+test: 8500 / 10000
+test: 8600 / 10000
+test: 8700 / 10000
+test: 8800 / 10000
+test: 8900 / 10000
+test: 9000 / 10000
+test: 9100 / 10000
+test: 9200 / 10000
+test: 9300 / 10000
+test: 9400 / 10000
+test: 9500 / 10000
+test: 9600 / 10000
+test: 9700 / 10000
+test: 9800 / 10000
+test: 9900 / 10000
+Inferring latency of Lenet is : 0.102490 ms (batchsize is 1)
+epoch: 0  accuracy: -47312.5
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 74 
+epoch: 0  20 / 60000 loss: 13.6303 lr: 0.00999326 time: 1236.03 ms / 9 iter
+epoch: 0  40 / 60000 loss: nan lr: 0.00998577 time: 1305.41 ms / 10 iter
+epoch: 0  60 / 60000 loss: nan lr: 0.0099783 time: 1317.12 ms / 10 iter
+epoch: 0  80 / 60000 loss: nan lr: 0.00997085 time: 1348.9 ms / 10 iter
+epoch: 0  100 / 60000 loss: nan lr: 0.00996341 time: 1313.53 ms / 10 iter
+epoch: 0  120 / 60000 loss: nan lr: 0.00995598 time: 1333.87 ms / 10 iter
+epoch: 0  140 / 60000 loss: nan lr: 0.00994856 time: 1294.23 ms / 10 iter
+epoch: 0  160 / 60000 loss: nan lr: 0.00994116 time: 1327.97 ms / 10 iter
+Training latency of Lenet is : 131.624969 ms (batchsize is 2)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Lenet_2.mnn
+test: 200 / 10000
+test: 400 / 10000
+test: 600 / 10000
+test: 800 / 10000
+test: 1000 / 10000
+test: 1200 / 10000
+test: 1400 / 10000
+test: 1600 / 10000
+test: 1800 / 10000
+test: 2000 / 10000
+test: 2200 / 10000
+test: 2400 / 10000
+test: 2600 / 10000
+test: 2800 / 10000
+test: 3000 / 10000
+test: 3200 / 10000
+test: 3400 / 10000
+test: 3600 / 10000
+test: 3800 / 10000
+test: 4000 / 10000
+test: 4200 / 10000
+test: 4400 / 10000
+test: 4600 / 10000
+test: 4800 / 10000
+test: 5000 / 10000
+test: 5200 / 10000
+test: 5400 / 10000
+test: 5600 / 10000
+test: 5800 / 10000
+test: 6000 / 10000
+test: 6200 / 10000
+test: 6400 / 10000
+test: 6600 / 10000
+test: 6800 / 10000
+test: 7000 / 10000
+test: 7200 / 10000
+test: 7400 / 10000
+test: 7600 / 10000
+test: 7800 / 10000
+test: 8000 / 10000
+test: 8200 / 10000
+test: 8400 / 10000
+test: 8600 / 10000
+test: 8800 / 10000
+test: 9000 / 10000
+test: 9200 / 10000
+test: 9400 / 10000
+test: 9600 / 10000
+test: 9800 / 10000
+Inferring latency of Lenet is : 0.170945 ms (batchsize is 2)
+epoch: 0  accuracy: -160642
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 42 
+epoch: 0  40 / 60000 loss: 12.5883 lr: 0.00999326 time: 1456.17 ms / 9 iter
+epoch: 0  80 / 60000 loss: 87 lr: 0.00998577 time: 1530.32 ms / 10 iter
+epoch: 0  120 / 60000 loss: nan lr: 0.0099783 time: 1530.39 ms / 10 iter
+epoch: 0  160 / 60000 loss: nan lr: 0.00997085 time: 1557.25 ms / 10 iter
+Training latency of Lenet is : 154.132843 ms (batchsize is 4)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Lenet_4.mnn
+test: 400 / 10000
+test: 800 / 10000
+test: 1200 / 10000
+test: 1600 / 10000
+test: 2000 / 10000
+test: 2400 / 10000
+test: 2800 / 10000
+test: 3200 / 10000
+test: 3600 / 10000
+test: 4000 / 10000
+test: 4400 / 10000
+test: 4800 / 10000
+test: 5200 / 10000
+test: 5600 / 10000
+test: 6000 / 10000
+test: 6400 / 10000
+test: 6800 / 10000
+test: 7200 / 10000
+test: 7600 / 10000
+test: 8000 / 10000
+test: 8400 / 10000
+test: 8800 / 10000
+test: 9200 / 10000
+test: 9600 / 10000
+Inferring latency of Lenet is : 0.236741 ms (batchsize is 4)
+epoch: 0  accuracy: 28940.7
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 26 
+epoch: 0  80 / 60000 loss: 2.63798 lr: 0.00999326 time: 1830.57 ms / 9 iter
+epoch: 0  160 / 60000 loss: 5.76688 lr: 0.00998577 time: 1901.86 ms / 10 iter
+epoch: 0  240 / 60000 loss: 2.62099 lr: 0.0099783 time: 1942.09 ms / 10 iter
+Training latency of Lenet is : 192.471756 ms (batchsize is 8)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Lenet_8.mnn
+test: 800 / 10000
+test: 1600 / 10000
+test: 2400 / 10000
+test: 3200 / 10000
+test: 4000 / 10000
+test: 4800 / 10000
+test: 5600 / 10000
+test: 6400 / 10000
+test: 7200 / 10000
+test: 8000 / 10000
+test: 8800 / 10000
+test: 9600 / 10000
+Inferring latency of Lenet is : 0.374661 ms (batchsize is 8)
+epoch: 0  accuracy: 99902.8
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 18 
+epoch: 0  160 / 60000 loss: 2.22181 lr: 0.00999326 time: 2683.84 ms / 9 iter
+epoch: 0  320 / 60000 loss: 3.45461 lr: 0.00998577 time: 2822.96 ms / 10 iter
+Training latency of Lenet is : 282.535614 ms (batchsize is 16)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Lenet_16.mnn
+test: 1600 / 10000
+test: 3200 / 10000
+test: 4800 / 10000
+test: 6400 / 10000
+test: 8000 / 10000
+test: 9600 / 10000
+Inferring latency of Lenet is : 0.656008 ms (batchsize is 16)
+epoch: 0  accuracy: -190789
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 14 
+epoch: 0  320 / 60000 loss: 1.88506 lr: 0.00999326 time: 4652.98 ms / 9 iter
+epoch: 0  640 / 60000 loss: 1.28109 lr: 0.00998577 time: 5069.77 ms / 10 iter
+Training latency of Lenet is : 505.251068 ms (batchsize is 32)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Lenet_32.mnn
+test: 3200 / 10000
+test: 6400 / 10000
+test: 9600 / 10000
+Inferring latency of Lenet is : 1.331126 ms (batchsize is 32)
+epoch: 0  accuracy: -171780
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 12 
+epoch: 0  640 / 60000 loss: 0.747154 lr: 0.00999326 time: 8785.83 ms / 9 iter
+Training latency of Lenet is : 972.622803 ms (batchsize is 64)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Lenet_64.mnn
+test: 6400 / 10000
+Inferring latency of Lenet is : 2.605764 ms (batchsize is 64)
+epoch: 0  accuracy: -181019
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 11 
+epoch: 0  1280 / 60000 loss: 0.705013 lr: 0.00999326 time: 16429.2 ms / 9 iter
+Training latency of Lenet is : 1800.539551 ms (batchsize is 128)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Lenet_128.mnn
+Inferring latency of Lenet is : 5.328477 ms (batchsize is 128)
+epoch: 0  accuracy: 64430.4

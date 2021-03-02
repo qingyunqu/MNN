@@ -1,0 +1,287 @@
+Processor	: AArch64 Processor rev 14 (aarch64)
+processor	: 0
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 1
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 2
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 3
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 4
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 5
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 6
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x1
+CPU part	: 0xd0d
+CPU revision	: 0
+
+processor	: 7
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x1
+CPU part	: 0xd0d
+CPU revision	: 0
+
+Hardware	: Qualcomm Technologies, Inc SM7225
+
+Build Flags: ABI=arm64-v8a OpenCL=OFF
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 138 
+epoch: 0  10 / 7500 loss: 2.21028 lr: 0.00999326 time: 10218.1 ms / 9 iter
+epoch: 0  20 / 7500 loss: 6.61633e-05 lr: 0.00998577 time: 10838.5 ms / 10 iter
+epoch: 0  30 / 7500 loss: 2.30259 lr: 0.0099783 time: 10992.7 ms / 10 iter
+epoch: 0  40 / 7500 loss: 2.30259 lr: 0.00997085 time: 10822 ms / 10 iter
+epoch: 0  50 / 7500 loss: 2.30259 lr: 0.00996341 time: 11069.7 ms / 10 iter
+epoch: 0  60 / 7500 loss: 2.30259 lr: 0.00995598 time: 11011.1 ms / 10 iter
+epoch: 0  70 / 7500 loss: 2.30259 lr: 0.00994856 time: 10905.1 ms / 10 iter
+epoch: 0  80 / 7500 loss: 2.30259 lr: 0.00994116 time: 10872.4 ms / 10 iter
+epoch: 0  90 / 7500 loss: 2.30259 lr: 0.00993377 time: 11034.6 ms / 10 iter
+epoch: 0  100 / 7500 loss: 2.30259 lr: 0.00992639 time: 10953.6 ms / 10 iter
+epoch: 0  110 / 7500 loss: 2.30259 lr: 0.00991902 time: 10960 ms / 10 iter
+epoch: 0  120 / 7500 loss: 2.30259 lr: 0.00991167 time: 10930.3 ms / 10 iter
+epoch: 0  130 / 7500 loss: 2.30259 lr: 0.00990433 time: 10990.9 ms / 10 iter
+epoch: 0  140 / 7500 loss: 2.30259 lr: 0.009897 time: 11056.6 ms / 10 iter
+Training latency of Alexnet is : 1084.635132 ms (batchsize is 1)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Alexnet_1.mnn
+Inferring latency of Alexnet is : 101.721771 ms (batchsize is 1)
+epoch: 0  accuracy: 0.0024
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 74 
+epoch: 0  20 / 7500 loss: 0.603534 lr: 0.00999326 time: 11564.2 ms / 9 iter
+epoch: 0  40 / 7500 loss: -nan lr: 0.00998577 time: 12667.4 ms / 10 iter
+epoch: 0  60 / 7500 loss: -nan lr: 0.0099783 time: 12714.4 ms / 10 iter
+epoch: 0  80 / 7500 loss: -nan lr: 0.00997085 time: 12823.2 ms / 10 iter
+epoch: 0  100 / 7500 loss: -nan lr: 0.00996341 time: 12843 ms / 10 iter
+epoch: 0  120 / 7500 loss: -nan lr: 0.00995598 time: 12734.5 ms / 10 iter
+epoch: 0  140 / 7500 loss: -nan lr: 0.00994856 time: 12803.6 ms / 10 iter
+epoch: 0  160 / 7500 loss: -nan lr: 0.00994116 time: 12725.6 ms / 10 iter
+Training latency of Alexnet is : 1249.857300 ms (batchsize is 2)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Alexnet_2.mnn
+Inferring latency of Alexnet is : 164.727432 ms (batchsize is 2)
+epoch: 0  accuracy: 0.0032
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 42 
+epoch: 0  40 / 7500 loss: 2.49027 lr: 0.00999326 time: 17329.9 ms / 9 iter
+epoch: 0  80 / 7500 loss: 6.77391 lr: 0.00998577 time: 18840.6 ms / 10 iter
+epoch: 0  120 / 7500 loss: -nan lr: 0.0099783 time: 18771.1 ms / 10 iter
+epoch: 0  160 / 7500 loss: -nan lr: 0.00997085 time: 18771.4 ms / 10 iter
+Training latency of Alexnet is : 1844.368164 ms (batchsize is 4)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Alexnet_4.mnn
+Inferring latency of Alexnet is : 254.837006 ms (batchsize is 4)
+epoch: 0  accuracy: 0.004
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 26 
+epoch: 0  80 / 7500 loss: 2.28957 lr: 0.00999326 time: 30692.1 ms / 9 iter
+epoch: 0  160 / 7500 loss: 3.05341 lr: 0.00998577 time: 33646.9 ms / 10 iter
+epoch: 0  240 / 7500 loss: 2.42764 lr: 0.0099783 time: 33816.5 ms / 10 iter
+Training latency of Alexnet is : 3284.371582 ms (batchsize is 8)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Alexnet_8.mnn
+Inferring latency of Alexnet is : 456.997009 ms (batchsize is 8)
+epoch: 0  accuracy: 0.0056
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 18 
+epoch: 0  160 / 7500 loss: 2.66833 lr: 0.00999326 time: 58219.9 ms / 9 iter
+epoch: 0  320 / 7500 loss: 2.50864 lr: 0.00998577 time: 63141.9 ms / 10 iter
+Training latency of Alexnet is : 6109.928223 ms (batchsize is 16)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Alexnet_16.mnn
+Inferring latency of Alexnet is : 746.841064 ms (batchsize is 16)
+epoch: 0  accuracy: 0.0024
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 14 
+epoch: 0  320 / 7500 loss: 2.29661 lr: 0.00999326 time: 113813 ms / 9 iter
+epoch: 0  640 / 7500 loss: 2.55745 lr: 0.00998577 time: 125340 ms / 10 iter
+Training latency of Alexnet is : 12198.319336 ms (batchsize is 32)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Alexnet_32.mnn
+Inferring latency of Alexnet is : 1472.429077 ms (batchsize is 32)
+epoch: 0  accuracy: 0.0136
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 12 
+epoch: 0  640 / 7500 loss: 2.32507 lr: 0.00999326 time: 229601 ms / 9 iter
+Training latency of Alexnet is : 24409.859375 ms (batchsize is 64)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Alexnet_64.mnn
+Inferring latency of Alexnet is : 2929.372070 ms (batchsize is 64)
+epoch: 0  accuracy: 0.0296
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 11 
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+epoch: 0  1280 / 7500 loss: Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+2.37942 lr: 0.00999326 time: 470439 ms / 9 iter
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Size larger than 500 M :830668800
+Training latency of Alexnet is : 60968.078125 ms (batchsize is 128)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Alexnet_128.mnn
+Inferring latency of Alexnet is : 5353.725098 ms (batchsize is 128)
+epoch: 0  accuracy: 0.0904

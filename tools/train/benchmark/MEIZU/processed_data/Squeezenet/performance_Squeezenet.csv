@@ -1,0 +1,2 @@
+,batchsize,VIRT,RES,SHR,cpuUsage_train,cpuUsage_infer,battery_current,battery_voltage,usb_current,usb_voltage
+1,1.0,0.0,0.0,0.0,,,0.0,0.0,0.0,0.0

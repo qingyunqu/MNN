@@ -1,0 +1,286 @@
+Processor	: AArch64 Processor rev 14 (aarch64)
+processor	: 0
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 1
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 2
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 3
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 4
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 5
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 6
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x1
+CPU part	: 0xd0d
+CPU revision	: 0
+
+processor	: 7
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x1
+CPU part	: 0xd0d
+CPU revision	: 0
+
+Hardware	: Qualcomm Technologies, Inc SM7225
+
+Build Flags: ABI=arm64-v8a OpenCL=OFF
+Error for open mobilenetv2.snapshot.mnn
+Error parameters, empty or parameter size not match 
+train iteration: 0 loss: 7.16681 lr: 1e-05
+train iteration: 1 loss: 7.14661 lr: 1e-05
+train iteration: 2 loss: 7.5536 lr: 1e-05
+train iteration: 3 loss: 6.20548 lr: 1e-05
+train iteration: 4 loss: 6.15794 lr: 1e-05
+train iteration: 5 loss: 7.12531 lr: 1e-05
+train iteration: 6 loss: 6.97525 lr: 1e-05
+train iteration: 7 loss: 7.11706 lr: 1e-05
+train iteration: 8 loss: 6.17286 lr: 1e-05
+train iteration: 9 loss: 6.9783 lr: 1e-05
+train iteration: 10 loss: 7.15384 lr: 1e-05
+train iteration: 11 loss: 6.94485 lr: 1e-05
+train iteration: 12 loss: 6.95205 lr: 1e-05
+train iteration: 13 loss: 6.13782 lr: 1e-05
+train iteration: 14 loss: 6.08997 lr: 1e-05
+train iteration: 15 loss: 7.53962 lr: 1e-05
+train iteration: 16 loss: 7.56641 lr: 1e-05
+train iteration: 17 loss: 6.90779 lr: 1e-05
+train iteration: 18 loss: 7.5106 lr: 1e-05
+train iteration: 19 loss: 6.12936 lr: 1e-05
+train iteration: 20 loss: 7.50197 lr: 1e-05
+train iteration: 21 loss: 7.51418 lr: 1e-05
+train iteration: 22 loss: 6.11797 lr: 1e-05
+train iteration: 23 loss: 6.89243 lr: 1e-05
+train iteration: 24 loss: 6.09419 lr: 1e-05
+train iteration: 25 loss: 7.44328 lr: 1e-05
+Training latency on MobilenetV2Train is : 666.031433 ms (batchsize is 1)
+Open mobilenetv2.snapshot.mnn error
+test iteration: 10 acc: 0/10 = 0%
+test iteration: 20 acc: 0/20 = 0%
+Inferring latency on MobilenetV2Train is : 53.550255 ms (batchsize is 1)
+train, 157, cost time: 2603.194092 ms
+modeName is /data/local/tmp/temp.Mobilenet_1.mnn
+Error for open mobilenetv2.snapshot.mnn
+Error parameters, empty or parameter size not match 
+train iteration: 0 loss: 7.09807 lr: 1e-05
+train iteration: 1 loss: 7.34627 lr: 1e-05
+train iteration: 2 loss: 7.59813 lr: 1e-05
+train iteration: 3 loss: 6.91228 lr: 1e-05
+train iteration: 4 loss: 6.63678 lr: 1e-05
+train iteration: 5 loss: 6.2417 lr: 1e-05
+train iteration: 6 loss: 6.52084 lr: 1e-05
+train iteration: 7 loss: 7.32367 lr: 1e-05
+train iteration: 8 loss: 6.6592 lr: 1e-05
+train iteration: 9 loss: 6.98725 lr: 1e-05
+train iteration: 10 loss: 7.39937 lr: 1e-05
+train iteration: 11 loss: 6.60451 lr: 1e-05
+train iteration: 12 loss: 6.76576 lr: 1e-05
+train iteration: 13 loss: 7.42445 lr: 1e-05
+train iteration: 14 loss: 7.39815 lr: 1e-05
+train iteration: 15 loss: 7.08576 lr: 1e-05
+train iteration: 16 loss: 6.98759 lr: 1e-05
+train iteration: 17 loss: 6.14564 lr: 1e-05
+train iteration: 18 loss: 7.18355 lr: 1e-05
+train iteration: 19 loss: 7.24663 lr: 1e-05
+train iteration: 20 loss: 6.60034 lr: 1e-05
+train iteration: 21 loss: 6.58893 lr: 1e-05
+train iteration: 22 loss: 7.0505 lr: 1e-05
+train iteration: 23 loss: 7.03619 lr: 1e-05
+train iteration: 24 loss: 6.51589 lr: 1e-05
+train iteration: 25 loss: 7.44305 lr: 1e-05
+Training latency on MobilenetV2Train is : 1289.343506 ms (batchsize is 2)
+Open mobilenetv2.snapshot.mnn error
+test iteration: 10 acc: 0/20 = 0%
+test iteration: 20 acc: 0/40 = 0%
+Inferring latency on MobilenetV2Train is : 97.775711 ms (batchsize is 2)
+train, 157, cost time: 3969.290283 ms
+modeName is /data/local/tmp/temp.Mobilenet_2.mnn
+Error for open mobilenetv2.snapshot.mnn
+Error parameters, empty or parameter size not match 
+train iteration: 0 loss: 7.2823 lr: 1e-05
+train iteration: 1 loss: 6.68437 lr: 1e-05
+train iteration: 2 loss: 7.13284 lr: 1e-05
+train iteration: 3 loss: 6.81909 lr: 1e-05
+train iteration: 4 loss: 6.95415 lr: 1e-05
+train iteration: 5 loss: 6.69838 lr: 1e-05
+train iteration: 6 loss: 6.78423 lr: 1e-05
+train iteration: 7 loss: 7.13681 lr: 1e-05
+train iteration: 8 loss: 7.38856 lr: 1e-05
+train iteration: 9 loss: 7.2175 lr: 1e-05
+train iteration: 10 loss: 6.56959 lr: 1e-05
+train iteration: 11 loss: 7.19063 lr: 1e-05
+train iteration: 12 loss: 7.04197 lr: 1e-05
+train iteration: 13 loss: 6.76854 lr: 1e-05
+train iteration: 14 loss: 7.10589 lr: 1e-05
+train iteration: 15 loss: 7.06168 lr: 1e-05
+train iteration: 16 loss: 7.08843 lr: 1e-05
+train iteration: 17 loss: 6.99226 lr: 1e-05
+train iteration: 18 loss: 6.99436 lr: 1e-05
+train iteration: 19 loss: 7.14997 lr: 1e-05
+train iteration: 20 loss: 7.17563 lr: 1e-05
+train iteration: 21 loss: 6.91378 lr: 1e-05
+train iteration: 22 loss: 6.81024 lr: 1e-05
+train iteration: 23 loss: 6.85036 lr: 1e-05
+train iteration: 24 loss: 7.14332 lr: 1e-05
+train iteration: 25 loss: 6.96773 lr: 1e-05
+Training latency on MobilenetV2Train is : 2395.047363 ms (batchsize is 4)
+Open mobilenetv2.snapshot.mnn error
+test iteration: 10 acc: 0/40 = 0%
+test iteration: 20 acc: 0/80 = 0%
+Inferring latency on MobilenetV2Train is : 186.553452 ms (batchsize is 4)
+train, 157, cost time: 6665.037109 ms
+modeName is /data/local/tmp/temp.Mobilenet_4.mnn
+Error for open mobilenetv2.snapshot.mnn
+Error parameters, empty or parameter size not match 
+train iteration: 0 loss: 7.12793 lr: 1e-05
+train iteration: 1 loss: 7.29053 lr: 1e-05
+train iteration: 2 loss: 7.10725 lr: 1e-05
+train iteration: 3 loss: 6.76893 lr: 1e-05
+train iteration: 4 loss: 6.88873 lr: 1e-05
+train iteration: 5 loss: 6.9621 lr: 1e-05
+train iteration: 6 loss: 7.14165 lr: 1e-05
+train iteration: 7 loss: 6.90042 lr: 1e-05
+train iteration: 8 loss: 7.13374 lr: 1e-05
+train iteration: 9 loss: 7.04321 lr: 1e-05
+train iteration: 10 loss: 7.21154 lr: 1e-05
+train iteration: 11 loss: 7.00157 lr: 1e-05
+train iteration: 12 loss: 7.01901 lr: 1e-05
+train iteration: 13 loss: 7.24846 lr: 1e-05
+train iteration: 14 loss: 7.0532 lr: 1e-05
+train iteration: 15 loss: 7.16003 lr: 1e-05
+train iteration: 16 loss: 6.82419 lr: 1e-05
+train iteration: 17 loss: 7.19646 lr: 1e-05
+train iteration: 18 loss: 7.0139 lr: 1e-05
+train iteration: 19 loss: 7.37771 lr: 1e-05
+train iteration: 20 loss: 7.00835 lr: 1e-05
+train iteration: 21 loss: 6.97379 lr: 1e-05
+train iteration: 22 loss: 6.94031 lr: 1e-05
+train iteration: 23 loss: 7.09056 lr: 1e-05
+train iteration: 24 loss: 7.13957 lr: 1e-05
+train iteration: 25 loss: 7.16147 lr: 1e-05
+Training latency on MobilenetV2Train is : 4645.953125 ms (batchsize is 8)
+Open mobilenetv2.snapshot.mnn error
+test iteration: 10 acc: 0/80 = 0%
+test iteration: 20 acc: 0/160 = 0%
+Inferring latency on MobilenetV2Train is : 380.374359 ms (batchsize is 8)
+train, 157, cost time: 12660.794922 ms
+modeName is /data/local/tmp/temp.Mobilenet_8.mnn
+Error for open mobilenetv2.snapshot.mnn
+Error parameters, empty or parameter size not match 
+train iteration: 0 loss: 7.231 lr: 1e-05
+train iteration: 1 loss: 6.94911 lr: 1e-05
+train iteration: 2 loss: 7.07207 lr: 1e-05
+train iteration: 3 loss: 6.94136 lr: 1e-05
+train iteration: 4 loss: 7.0109 lr: 1e-05
+train iteration: 5 loss: 6.99683 lr: 1e-05
+train iteration: 6 loss: 7.01809 lr: 1e-05
+train iteration: 7 loss: 7.02903 lr: 1e-05
+train iteration: 8 loss: 6.98652 lr: 1e-05
+train iteration: 9 loss: 7.20461 lr: 1e-05
+train iteration: 10 loss: 7.02136 lr: 1e-05
+train iteration: 11 loss: 7.01586 lr: 1e-05
+train iteration: 12 loss: 7.14216 lr: 1e-05
+train iteration: 13 loss: 6.99716 lr: 1e-05
+train iteration: 14 loss: 6.57226 lr: 1e-05
+train iteration: 15 loss: 6.90114 lr: 1e-05
+train iteration: 16 loss: 6.82818 lr: 1e-05
+train iteration: 17 loss: 7.02258 lr: 1e-05
+train iteration: 18 loss: 6.96273 lr: 1e-05
+train iteration: 19 loss: 6.73017 lr: 1e-05
+train iteration: 20 loss: 7.19444 lr: 1e-05
+train iteration: 21 loss: 6.76124 lr: 1e-05
+train iteration: 22 loss: 6.84922 lr: 1e-05
+train iteration: 23 loss: 7.11841 lr: 1e-05
+train iteration: 24 loss: 7.04393 lr: 1e-05
+train iteration: 25 loss: 7.12897 lr: 1e-05
+Training latency on MobilenetV2Train is : 9364.246094 ms (batchsize is 16)
+Open mobilenetv2.snapshot.mnn error
+test iteration: 10 acc: 0/160 = 0%
+test iteration: 20 acc: 0/320 = 0%
+Inferring latency on MobilenetV2Train is : 766.741821 ms (batchsize is 16)
+train, 157, cost time: 24352.632812 ms
+modeName is /data/local/tmp/temp.Mobilenet_16.mnn
+Error for open mobilenetv2.snapshot.mnn
+Error parameters, empty or parameter size not match 
+train iteration: 0 loss: 6.92999 lr: 1e-05
+train iteration: 1 loss: 7.05318 lr: 1e-05
+train iteration: 2 loss: 7.08597 lr: 1e-05
+train iteration: 3 loss: 7.00533 lr: 1e-05
+train iteration: 4 loss: 7.13162 lr: 1e-05
+train iteration: 5 loss: 7.02244 lr: 1e-05
+train iteration: 6 loss: 6.81801 lr: 1e-05
+train iteration: 7 loss: 6.95683 lr: 1e-05
+train iteration: 8 loss: 7.07143 lr: 1e-05
+train iteration: 9 loss: 6.8645 lr: 1e-05
+train iteration: 10 loss: 7.0471 lr: 1e-05
+train iteration: 11 loss: 7.0243 lr: 1e-05
+train iteration: 12 loss: 7.06073 lr: 1e-05
+train iteration: 13 loss: 7.04082 lr: 1e-05
+train iteration: 14 loss: 6.99094 lr: 1e-05
+train iteration: 15 loss: 6.91837 lr: 1e-05
+train iteration: 16 loss: 6.85641 lr: 1e-05
+train iteration: 17 loss: 6.79965 lr: 1e-05
+train iteration: 18 loss: 6.97038 lr: 1e-05
+train iteration: 19 loss: 6.96037 lr: 1e-05
+train iteration: 20 loss: 7.12833 lr: 1e-05
+train iteration: 21 loss: 6.9919 lr: 1e-05
+train iteration: 22 loss: 6.99653 lr: 1e-05
+train iteration: 23 loss: 6.89816 lr: 1e-05
+train iteration: 24 loss: 6.88003 lr: 1e-05
+train iteration: 25 loss: 6.94926 lr: 1e-05
+Training latency on MobilenetV2Train is : 19030.822266 ms (batchsize is 32)
+Open mobilenetv2.snapshot.mnn error
+test iteration: 10 acc: 0/320 = 0%
+test iteration: 20 acc: 0/640 = 0%
+Inferring latency on MobilenetV2Train is : 1520.219238 ms (batchsize is 32)
+train, 157, cost time: 47778.265625 ms
+modeName is /data/local/tmp/temp.Mobilenet_32.mnn

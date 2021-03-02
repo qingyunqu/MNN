@@ -1,0 +1,141 @@
+Processor	: AArch64 Processor rev 14 (aarch64)
+processor	: 0
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 1
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 2
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 3
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 4
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 5
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 6
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x1
+CPU part	: 0xd0d
+CPU revision	: 0
+
+processor	: 7
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x1
+CPU part	: 0xd0d
+CPU revision	: 0
+
+Hardware	: Qualcomm Technologies, Inc SM7225
+
+Build Flags: ABI=arm64-v8a OpenCL=OFF
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 37 
+epoch: 0  10 / 7500 loss: 2.21028 lr: 0.00999326 time: 10625.1 ms / 9 iter
+epoch: 0  20 / 7500 loss: 1.42406 lr: 0.00998577 time: 11549.7 ms / 10 iter
+epoch: 0  30 / 7500 loss: 2.2017 lr: 0.0099783 time: 11553.5 ms / 10 iter
+epoch: 0  40 / 7500 loss: 2.12454 lr: 0.00997085 time: 11646.7 ms / 10 iter
+Training latency of Alexnet is : 1142.401001 ms (batchsize is 1)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Alexnet_1.mnn
+test: 100 / 1250
+Inferring latency of Alexnet is : 118.281754 ms (batchsize is 1)
+epoch: 0  accuracy: -320571
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 21 
+epoch: 0  20 / 7500 loss: 0.681418 lr: 0.00999326 time: 12528.7 ms / 9 iter
+epoch: 0  40 / 7500 loss: 2.36061 lr: 0.00998577 time: 13647.2 ms / 10 iter
+Training latency of Alexnet is : 1342.635132 ms (batchsize is 2)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Alexnet_2.mnn
+Inferring latency of Alexnet is : 222.712341 ms (batchsize is 2)
+epoch: 0  accuracy: -268435
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 13 
+epoch: 0  40 / 7500 loss: 2.48381 lr: 0.00999326 time: 18499.6 ms / 9 iter
+Training latency of Alexnet is : 1965.738403 ms (batchsize is 4)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Alexnet_4.mnn
+Inferring latency of Alexnet is : 275.999847 ms (batchsize is 4)
+epoch: 0  accuracy: 379832
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 9 
+epoch: 0  80 / 7500 loss: 2.29373 lr: 0.00999326 time: 32828 ms / 9 iter
+Training latency of Alexnet is : 3526.928711 ms (batchsize is 8)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Alexnet_8.mnn
+Inferring latency of Alexnet is : 466.106812 ms (batchsize is 8)
+epoch: 0  accuracy: -1.01119e+06
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 7 
+epoch: 0  160 / 7500 loss: 2.4119 lr: 0.00999326 time: 61621.2 ms / 9 iter
+Training latency of Alexnet is : 6602.523438 ms (batchsize is 16)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Alexnet_16.mnn
+Inferring latency of Alexnet is : 834.673279 ms (batchsize is 16)
+epoch: 0  accuracy: -738174
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 6 
+epoch: 0  320 / 7500 loss: 2.29701 lr: 0.00999326 time: 121720 ms / 9 iter
+Training latency of Alexnet is : 13016.688477 ms (batchsize is 32)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Alexnet_32.mnn
+Inferring latency of Alexnet is : 1595.165039 ms (batchsize is 32)
+epoch: 0  accuracy: -606235

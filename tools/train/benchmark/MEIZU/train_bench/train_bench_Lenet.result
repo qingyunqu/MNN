@@ -1,0 +1,217 @@
+Processor	: AArch64 Processor rev 14 (aarch64)
+processor	: 0
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 1
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 2
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 3
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 4
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 5
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 6
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x1
+CPU part	: 0xd0d
+CPU revision	: 0
+
+processor	: 7
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x1
+CPU part	: 0xd0d
+CPU revision	: 0
+
+Hardware	: Qualcomm Technologies, Inc SM7225
+
+Build Flags: ABI=arm64-v8a OpenCL=ON
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 328 
+epoch: 0  10 / 60000 loss: 1.88574 lr: 0.00999326 time: 11799.1 ms / 9 iter
+epoch: 0  20 / 60000 loss: 2.62695 lr: 0.00998577 time: 1841.17 ms / 10 iter
+epoch: 0  30 / 60000 loss: 2.28516 lr: 0.0099783 time: 1866.73 ms / 10 iter
+epoch: 0  40 / 60000 loss: 5.22266 lr: 0.00997085 time: 1758.34 ms / 10 iter
+epoch: 0  50 / 60000 loss: 2.42578 lr: 0.00996341 time: 1750.46 ms / 10 iter
+epoch: 0  60 / 60000 loss: 4.88672 lr: 0.00995598 time: 1898.83 ms / 10 iter
+epoch: 0  70 / 60000 loss: 2.41797 lr: 0.00994856 time: 1903.21 ms / 10 iter
+epoch: 0  80 / 60000 loss: 2.14258 lr: 0.00994116 time: 1963.62 ms / 10 iter
+epoch: 0  90 / 60000 loss: 2.13477 lr: 0.00993377 time: 1791.68 ms / 10 iter
+epoch: 0  100 / 60000 loss: 2.4043 lr: 0.00992639 time: 1749.34 ms / 10 iter
+epoch: 0  110 / 60000 loss: 2.34961 lr: 0.00991902 time: 1860.17 ms / 10 iter
+epoch: 0  120 / 60000 loss: 2.49805 lr: 0.00991167 time: 1807.85 ms / 10 iter
+epoch: 0  130 / 60000 loss: 2.45898 lr: 0.00990433 time: 1761.96 ms / 10 iter
+epoch: 0  140 / 60000 loss: 2.5625 lr: 0.009897 time: 1969.9 ms / 10 iter
+epoch: 0  150 / 60000 loss: 2.50586 lr: 0.00988969 time: 1821.67 ms / 10 iter
+epoch: 0  160 / 60000 loss: 2.14258 lr: 0.00988238 time: 1785.94 ms / 10 iter
+epoch: 0  170 / 60000 loss: 2.31836 lr: 0.0098751 time: 1959.76 ms / 10 iter
+epoch: 0  180 / 60000 loss: 2.25195 lr: 0.00986782 time: 1754.45 ms / 10 iter
+epoch: 0  190 / 60000 loss: 2.24414 lr: 0.00986055 time: 1720.11 ms / 10 iter
+epoch: 0  200 / 60000 loss: 2.24805 lr: 0.0098533 time: 1864.94 ms / 10 iter
+epoch: 0  210 / 60000 loss: 2.21289 lr: 0.00984606 time: 1754.91 ms / 10 iter
+epoch: 0  220 / 60000 loss: 2.43945 lr: 0.00983883 time: 1827.63 ms / 10 iter
+epoch: 0  230 / 60000 loss: 2.24414 lr: 0.00983162 time: 1886.89 ms / 10 iter
+epoch: 0  240 / 60000 loss: 2.19922 lr: 0.00982442 time: 1897.68 ms / 10 iter
+epoch: 0  250 / 60000 loss: 2.55859 lr: 0.00981723 time: 1902.05 ms / 10 iter
+epoch: 0  260 / 60000 loss: 2.36328 lr: 0.00981005 time: 1956.09 ms / 10 iter
+epoch: 0  270 / 60000 loss: 2.39453 lr: 0.00980288 time: 1839.7 ms / 10 iter
+epoch: 0  280 / 60000 loss: 1.98242 lr: 0.00979573 time: 1934.1 ms / 10 iter
+epoch: 0  290 / 60000 loss: 2.50977 lr: 0.00978859 time: 1869.63 ms / 10 iter
+epoch: 0  300 / 60000 loss: 2.375 lr: 0.00978146 time: 1786.78 ms / 10 iter
+epoch: 0  310 / 60000 loss: 2.75586 lr: 0.00977434 time: 1844.38 ms / 10 iter
+epoch: 0  320 / 60000 loss: 2.1875 lr: 0.00976724 time: 1841 ms / 10 iter
+epoch: 0  330 / 60000 loss: 2.51953 lr: 0.00976015 time: 1798.77 ms / 10 iter
+Training latency of Lenet is : 180.474991 ms (batchsize is 1)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Lenet_1.mnn
+test: 100 / 10000
+test: 200 / 10000
+test: 300 / 10000
+test: 400 / 10000
+test: 500 / 10000
+test: 600 / 10000
+test: 700 / 10000
+test: 800 / 10000
+test: 900 / 10000
+test: 1000 / 10000
+test: 1100 / 10000
+test: 1200 / 10000
+test: 1300 / 10000
+test: 1400 / 10000
+test: 1500 / 10000
+test: 1600 / 10000
+test: 1700 / 10000
+test: 1800 / 10000
+test: 1900 / 10000
+test: 2000 / 10000
+test: 2100 / 10000
+test: 2200 / 10000
+test: 2300 / 10000
+test: 2400 / 10000
+test: 2500 / 10000
+test: 2600 / 10000
+test: 2700 / 10000
+test: 2800 / 10000
+test: 2900 / 10000
+test: 3000 / 10000
+test: 3100 / 10000
+test: 3200 / 10000
+test: 3300 / 10000
+test: 3400 / 10000
+test: 3500 / 10000
+test: 3600 / 10000
+test: 3700 / 10000
+test: 3800 / 10000
+test: 3900 / 10000
+test: 4000 / 10000
+test: 4100 / 10000
+test: 4200 / 10000
+test: 4300 / 10000
+test: 4400 / 10000
+test: 4500 / 10000
+test: 4600 / 10000
+test: 4700 / 10000
+test: 4800 / 10000
+test: 4900 / 10000
+test: 5000 / 10000
+test: 5100 / 10000
+test: 5200 / 10000
+test: 5300 / 10000
+test: 5400 / 10000
+test: 5500 / 10000
+test: 5600 / 10000
+test: 5700 / 10000
+test: 5800 / 10000
+test: 5900 / 10000
+test: 6000 / 10000
+test: 6100 / 10000
+test: 6200 / 10000
+test: 6300 / 10000
+test: 6400 / 10000
+test: 6500 / 10000
+test: 6600 / 10000
+test: 6700 / 10000
+test: 6800 / 10000
+test: 6900 / 10000
+test: 7000 / 10000
+test: 7100 / 10000
+test: 7200 / 10000
+test: 7300 / 10000
+test: 7400 / 10000
+test: 7500 / 10000
+test: 7600 / 10000
+test: 7700 / 10000
+test: 7800 / 10000
+test: 7900 / 10000
+test: 8000 / 10000
+test: 8100 / 10000
+test: 8200 / 10000
+test: 8300 / 10000
+test: 8400 / 10000
+test: 8500 / 10000
+test: 8600 / 10000
+test: 8700 / 10000
+test: 8800 / 10000
+test: 8900 / 10000
+test: 9000 / 10000
+test: 9100 / 10000
+test: 9200 / 10000
+test: 9300 / 10000
+test: 9400 / 10000
+test: 9500 / 10000
+test: 9600 / 10000
+test: 9700 / 10000
+test: 9800 / 10000
+test: 9900 / 10000
+Inferring latency of Lenet is : 26.049871 ms (batchsize is 1)
+epoch: 0  accuracy: -162651

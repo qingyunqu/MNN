@@ -1,0 +1,16 @@
+MNN benchmark
+Forward type: **CPU** thread=4** precision=2
+--------> Benchmarking... loop = 10, warmup = 3
+[ - ] temp.Lenet_1.mnn            max =    0.725ms  min =    0.613ms  avg =    0.638ms
+[ - ] temp.Lenet_16.mnn           max =    7.223ms  min =    4.488ms  avg =    5.285ms
+[ - ] temp.Lenet_2.mnn            max =    1.469ms  min =    1.339ms  avg =    1.385ms
+[ - ] temp.Lenet_4.mnn            max =    1.858ms  min =    1.678ms  avg =    1.718ms
+[ - ] temp.Lenet_8.mnn            max =    2.753ms  min =    2.645ms  avg =    2.680ms
+[ - ] temp.Lenet_32.mnn           max =    8.048ms  min =    7.853ms  avg =    7.960ms
+[ - ] temp.Lenet_64.mnn           max =   16.356ms  min =   15.929ms  avg =   16.183ms
+[ - ] temp.Alexnet_1.mnn          max =   32.020ms  min =   31.079ms  avg =   31.567ms
+[ - ] temp.Alexnet_2.mnn          max =   89.528ms  min =   88.833ms  avg =   89.186ms
+[ - ] temp.Alexnet_4.mnn          max =  136.764ms  min =  131.403ms  avg =  132.561ms
+[ - ] temp.Lenet_128.mnn          max =   33.634ms  min =   32.749ms  avg =   33.202ms
+[ - ] temp.Lenet_256.mnn          max =   65.895ms  min =   65.073ms  avg =   65.539ms
+[ - ] temp.Lenet_512.mnn          max =  133.485ms  min =  132.149ms  avg =  132.631ms
