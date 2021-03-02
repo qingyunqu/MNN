@@ -168,9 +168,9 @@ public:
     }
 };
 
-OpenCLCreatorRegister<UnaryCreator> __UnaryExecution(OpType_UnaryOp);
-OpenCLCreatorRegister<UnaryCreator> __SigmoidExecution(OpType_Sigmoid);
-OpenCLCreatorRegister<UnaryCreator> __TanhExecution(OpType_TanH);
-OpenCLCreatorRegister<CastCreator> __CastExecution(OpType_Cast);
+OpenCLCreatorRegister<UnaryCreator> __UnaryExecution(OpType_UnaryOp,IMAGE);
+OpenCLCreatorRegister<UnaryCreator> __SigmoidExecution(OpType_Sigmoid,IMAGE);
+OpenCLCreatorRegister<UnaryCreator> __TanhExecution(OpType_TanH,IMAGE);
+OpenCLCreatorRegister<CastCreator> __CastExecution(OpType_Cast,IMAGE);
 } // namespace OpenCL
 } // namespace MNN

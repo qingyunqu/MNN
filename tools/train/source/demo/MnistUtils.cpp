@@ -36,7 +36,7 @@ void MnistUtils::train(std::shared_ptr<Module> model, std::string root) {
     }
     auto exe = Executor::getGlobalExecutor();
     BackendConfig config;
-    exe->setGlobalExecutorConfig(MNN_FORWARD_OPENCL, config, 4);
+    exe->setGlobalExecutorConfig(MNN_FORWARD_CUDA, config, 4);
     std::shared_ptr<SGD> sgd(new SGD(model));
     sgd->setMomentum(0.9f);
     // sgd->setMomentum2(0.99f);
@@ -44,7 +44,7 @@ void MnistUtils::train(std::shared_ptr<Module> model, std::string root) {
 
     auto dataset = MnistDataset::create(root, MnistDataset::Mode::TRAIN);
     // the stack transform, stack [1, 28, 28] to [n, 1, 28, 28]
-    const size_t batchSize  = 24;
+    const size_t batchSize  = 64;
     const size_t numWorkers = 0;
     bool shuffle            = true;
 

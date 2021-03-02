@@ -1,0 +1,185 @@
+Processor	: AArch64 Processor rev 14 (aarch64)
+processor	: 0
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 1
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 2
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 3
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x805
+CPU revision	: 14
+
+processor	: 4
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x804
+CPU revision	: 14
+
+processor	: 5
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x804
+CPU revision	: 14
+
+processor	: 6
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x804
+CPU revision	: 14
+
+processor	: 7
+BogoMIPS	: 38.40
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop
+CPU implementer	: 0x51
+CPU architecture: 8
+CPU variant	: 0xd
+CPU part	: 0x804
+CPU revision	: 14
+
+Hardware	: Qualcomm Technologies, Inc SM8150
+
+Build Flags: ABI=arm64-v8a OpenCL=OFF
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 138 
+epoch: 0  10 / 7500 loss: nan lr: 0.00999326 time: 1538.94 ms / 9 iter
+epoch: 0  20 / 7500 loss: nan lr: 0.00998577 time: 1529.34 ms / 10 iter
+epoch: 0  30 / 7500 loss: nan lr: 0.0099783 time: 1522.6 ms / 10 iter
+epoch: 0  40 / 7500 loss: nan lr: 0.00997085 time: 1533.91 ms / 10 iter
+epoch: 0  50 / 7500 loss: nan lr: 0.00996341 time: 1548.02 ms / 10 iter
+epoch: 0  60 / 7500 loss: nan lr: 0.00995598 time: 1542.41 ms / 10 iter
+epoch: 0  70 / 7500 loss: nan lr: 0.00994856 time: 1537.95 ms / 10 iter
+epoch: 0  80 / 7500 loss: nan lr: 0.00994116 time: 1541.84 ms / 10 iter
+epoch: 0  90 / 7500 loss: nan lr: 0.00993377 time: 1534.48 ms / 10 iter
+epoch: 0  100 / 7500 loss: nan lr: 0.00992639 time: 1577.69 ms / 10 iter
+epoch: 0  110 / 7500 loss: nan lr: 0.00991902 time: 1579.82 ms / 10 iter
+epoch: 0  120 / 7500 loss: nan lr: 0.00991167 time: 1569.97 ms / 10 iter
+epoch: 0  130 / 7500 loss: nan lr: 0.00990433 time: 1577.96 ms / 10 iter
+epoch: 0  140 / 7500 loss: nan lr: 0.009897 time: 1566.48 ms / 10 iter
+Training latency of Squeezenet is : 151.238770 ms (batchsize is 1)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Squeezenet_1.mnn
+test: 100 / 1250
+test: 200 / 1250
+test: 300 / 1250
+test: 400 / 1250
+test: 500 / 1250
+test: 600 / 1250
+test: 700 / 1250
+test: 800 / 1250
+test: 900 / 1250
+test: 1000 / 1250
+test: 1100 / 1250
+test: 1200 / 1250
+Inferring latency of Squeezenet is : 68.167458 ms (batchsize is 1)
+epoch: 0  accuracy: 989856
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 74 
+epoch: 0  20 / 7500 loss: nan lr: 0.00999326 time: 3092.96 ms / 9 iter
+epoch: 0  40 / 7500 loss: nan lr: 0.00998577 time: 3231.26 ms / 10 iter
+epoch: 0  60 / 7500 loss: nan lr: 0.0099783 time: 3202.04 ms / 10 iter
+epoch: 0  80 / 7500 loss: nan lr: 0.00997085 time: 3203.22 ms / 10 iter
+epoch: 0  100 / 7500 loss: nan lr: 0.00996341 time: 3225 ms / 10 iter
+epoch: 0  120 / 7500 loss: nan lr: 0.00995598 time: 3235.23 ms / 10 iter
+epoch: 0  140 / 7500 loss: nan lr: 0.00994856 time: 3229.8 ms / 10 iter
+epoch: 0  160 / 7500 loss: nan lr: 0.00994116 time: 3248.15 ms / 10 iter
+Training latency of Squeezenet is : 314.891083 ms (batchsize is 2)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Squeezenet_2.mnn
+test: 200 / 1250
+test: 400 / 1250
+test: 600 / 1250
+test: 800 / 1250
+test: 1000 / 1250
+test: 1200 / 1250
+Inferring latency of Squeezenet is : 63.095364 ms (batchsize is 2)
+epoch: 0  accuracy: 1.36902e+06
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 42 
+epoch: 0  40 / 7500 loss: nan lr: 0.00999326 time: 6090.57 ms / 9 iter
+epoch: 0  80 / 7500 loss: nan lr: 0.00998577 time: 6574.64 ms / 10 iter
+epoch: 0  120 / 7500 loss: nan lr: 0.0099783 time: 6642.16 ms / 10 iter
+epoch: 0  160 / 7500 loss: nan lr: 0.00997085 time: 6623.58 ms / 10 iter
+Training latency of Squeezenet is : 645.102966 ms (batchsize is 4)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Squeezenet_4.mnn
+test: 400 / 1250
+test: 800 / 1250
+test: 1200 / 1250
+Inferring latency of Squeezenet is : 89.141624 ms (batchsize is 4)
+epoch: 0  accuracy: -1.02005e+06
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 26 
+epoch: 0  80 / 7500 loss: nan lr: 0.00999326 time: 12672.5 ms / 9 iter
+epoch: 0  160 / 7500 loss: nan lr: 0.00998577 time: 13769 ms / 10 iter
+epoch: 0  240 / 7500 loss: nan lr: 0.0099783 time: 13812.4 ms / 10 iter
+Training latency of Squeezenet is : 1343.583984 ms (batchsize is 8)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Squeezenet_8.mnn
+test: 800 / 1250
+Inferring latency of Squeezenet is : 143.771835 ms (batchsize is 8)
+epoch: 0  accuracy: -496606
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 18 
+epoch: 0  160 / 7500 loss: nan lr: 0.00999326 time: 26283.6 ms / 9 iter
+epoch: 0  320 / 7500 loss: nan lr: 0.00998577 time: 28714.9 ms / 10 iter
+Training latency of Squeezenet is : 2787.561768 ms (batchsize is 16)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Squeezenet_16.mnn
+Inferring latency of Squeezenet is : 272.979736 ms (batchsize is 16)
+epoch: 0  accuracy: -234881
+Error for open mnist.snapshot.mnn
+Error parameters, empty or parameter size not match 
+ warmUp: 5 
+ measureIteration: 14 
+epoch: 0  320 / 7500 loss: nan lr: 0.00999326 time: 132282 ms / 9 iter
+epoch: 0  640 / 7500 loss: nan lr: 0.00998577 time: 191032 ms / 10 iter
+Training latency of Squeezenet is : 17414.033203 ms (batchsize is 32)
+Open mnist.snapshot.mnn error
+modeName is /data/local/tmp/temp.Squeezenet_32.mnn
+Inferring latency of Squeezenet is : 1650.521851 ms (batchsize is 32)
+epoch: 0  accuracy: 1.61397e+06

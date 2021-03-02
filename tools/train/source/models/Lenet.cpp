@@ -23,16 +23,17 @@ Lenet::Lenet() {
     convOption.kernelSize = {5, 5};
     convOption.channel    = {20, 50};
     conv2.reset(NN::Conv(convOption));
-    ip1.reset(NN::Linear(800, 500));
-    ip2.reset(NN::Linear(500, 10));
+    ip1.reset(NN::Linear(800, 400));
+    ip2.reset(NN::Linear(400, 10));
     dropout.reset(NN::Dropout(0.5));
-    registerModel({conv1, conv2, ip1, ip2, dropout});
+    registerModel({conv1, ip1, ip2, dropout});
 }
 
 std::vector<Express::VARP> Lenet::onForward(const std::vector<Express::VARP>& inputs) {
     using namespace Express;
     VARP x = inputs[0];
     x      = conv1->forward(x);
+    // x      = _Sigmoid(x);
     x      = _MaxPool(x, {2, 2}, {2, 2});
     x      = conv2->forward(x);
     x      = _MaxPool(x, {2, 2}, {2, 2});
