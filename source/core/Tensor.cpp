@@ -18,6 +18,7 @@
 using namespace std;
 
 namespace MNN {
+int Tensor::uniqueID = 0;
 Tensor::Tensor(int dimSize, DimensionType type) {
     MNN_ASSERT(dimSize <= MNN_MAX_TENSOR_DIM);
     mDescribe          = new InsideDescribe;
@@ -26,6 +27,7 @@ Tensor::Tensor(int dimSize, DimensionType type) {
     mBuffer.device     = 0;
     mBuffer.host       = nullptr;
     mBuffer.dim        = &mDescribe->dims[0];
+    mID = uniqueID++;
 
     switch (type) {
         case CAFFE:
@@ -52,6 +54,7 @@ Tensor::Tensor(const Tensor* tensor, DimensionType type, bool allocMemory) {
     mBuffer.device     = 0;
     mBuffer.host       = nullptr;
     mBuffer.dim        = &mDescribe->dims[0];
+    mID = uniqueID++;
 
     for (int i = 0; i < buffer.dimensions; ++i) {
         mBuffer.dim[i].extent = buffer.dim[i].extent;
@@ -180,6 +183,16 @@ Tensor::DimensionType Tensor::getDimensionType() const {
         return Tensor::TENSORFLOW;
     }
     return Tensor::CAFFE;
+}
+
+std::string Tensor::myGetDimensionType() const {
+    if (mDescribe->dimensionFormat == MNN_DATA_FORMAT_NHWC) {
+        return "TENSORFLOW";
+    } else if (mDescribe->dimensionFormat == MNN_DATA_FORMAT_NC4HW4) {
+        return "CAFFE_C4";
+    } else {
+        return "CAFFE";
+    }
 }
 
 Tensor::HandleDataType Tensor::getHandleDataType() const {
@@ -377,6 +390,15 @@ void Tensor::printShape() const {
         MNN_PRINT("%d, ", this->length(i));
     }
     MNN_PRINT("\n");
+}
+
+void Tensor::myPrintShape() const {
+    const int dims = this->dimensions();
+    printf("[");
+    for (int i = 0; i < dims; ++i) {
+        MNN_PRINT("%d, ", this->length(i));
+    }
+    printf("]");
 }
 
 int Tensor::size() const {

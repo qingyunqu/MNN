@@ -154,6 +154,7 @@ public:
      * @return dimension type.
      */
     DimensionType getDimensionType() const;
+    std::string myGetDimensionType() const;
 
     /**
      * @brief handle data type. used when data type code is halide_type_handle.
@@ -254,6 +255,9 @@ public:
     inline void setLength(int index, int length) {
         mBuffer.dim[index].extent = length;
     }
+    inline const int ID() const {
+        return mID;
+    }
 
 public:
     /**
@@ -265,10 +269,15 @@ public:
      *@brief print tensor shape
      */
     void printShape() const;
+    void myPrintShape() const;
 
 private:
     halide_buffer_t mBuffer;
     struct InsideDescribe* mDescribe;
+    int mID = -1;
+
+private:
+    static int uniqueID;
 
 private:
     friend class TensorUtils;

@@ -77,7 +77,9 @@ Express::VARP SGD::onComputeUpdateValue(Express::VARP param, Express::VARP grad)
 }
 
 std::map<Express::VARP, Express::VARP> SGD::onGetNextParameter(Express::VARP loss) {
+    printf("begin compute grad graph\n");
     auto grad = OpGrad::grad(loss, trainable(), mGradBlockExprName);
+    printf("finish compute grad graph\n");
     auto parameters = module()->parameters();
     std::vector<VARP> prepareCompute;
     for (auto iter : parameters) {
@@ -88,7 +90,9 @@ std::map<Express::VARP, Express::VARP> SGD::onGetNextParameter(Express::VARP los
     for (auto& iter : grad) {
         prepareCompute.emplace_back(iter.second);
     }
+    printf("begin prepare compute\n");
     Variable::prepareCompute(prepareCompute);
+    printf("finish prepare compute & start read-map\n");
     std::vector<VARP> replaceOp(prepareCompute.size());
     for (int i=0; i<prepareCompute.size(); ++i) {
         auto info = prepareCompute[i]->getInfo();
@@ -100,10 +104,11 @@ std::map<Express::VARP, Express::VARP> SGD::onGetNextParameter(Express::VARP los
         auto newVar = _Const(ptr, info->dim, info->order, info->type);
         replaceOp[i]= newVar;
     }
+    printf("finish read-map & start replace\n");
     for (int i=0; i<prepareCompute.size(); ++i) {
         Variable::replace(prepareCompute[i], replaceOp[i]);
     }
-
+    printf("finish replace & start compute update value\n");
     for (auto& iter : grad) {
         // apply regularization
         auto addWeightDecayGrad = regularizeParameters(iter.first, iter.second);
@@ -114,6 +119,7 @@ std::map<Express::VARP, Express::VARP> SGD::onGetNextParameter(Express::VARP los
         auto newParameter = iter.first - updateValue;
         iter.second       = newParameter;
     }
+    printf("finish func %s\n", __FUNCTION__ );
     return grad;
 }
 

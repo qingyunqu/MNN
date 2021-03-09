@@ -54,9 +54,9 @@ void MobilenetV2Utils::train(std::shared_ptr<Module> model, const int numClasses
     auto trainDataset = ImageDataset::create(trainImagesFolder, trainImagesTxt, datasetConfig.get(), readAllImagesToMemory);
     auto testDataset = ImageDataset::create(testImagesFolder, testImagesTxt, datasetConfig.get(), readAllImagesToMemory);
 
-    const int trainBatchSize = 32;
-    const int trainNumWorkers = 4;
-    const int testBatchSize = 10;
+    const int trainBatchSize = 8;
+    const int trainNumWorkers = 1;
+    const int testBatchSize = 1;
     const int testNumWorkers = 0;
 
     auto trainDataLoader = trainDataset.createLoader(trainBatchSize, true, true, trainNumWorkers);
@@ -102,6 +102,7 @@ void MobilenetV2Utils::train(std::shared_ptr<Module> model, const int numClasses
                     std::cout << " lr: " << rate << std::endl;
                 }
                 solver->step(loss);
+                return;
             }
         }
 

@@ -121,6 +121,7 @@ void MnistUtils::train(std::shared_ptr<Module> model, std::string root) {
                     lastIndex = i;
                 }
                 sgd->step(loss);
+                return;
             }
         }
         Variable::save(model->parameters(), "mnist.snapshot.mnn");

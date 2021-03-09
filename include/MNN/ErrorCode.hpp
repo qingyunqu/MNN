@@ -28,6 +28,10 @@ enum ErrorCode {
     // Op Resize Error
     TENSOR_NOT_SUPPORT = 20,
     TENSOR_NEED_DIVIDE = 21,
+
+    //swap error
+    SWAP_OUT_ERROR = 30,
+    SWAP_IN_ERROR = 31,
 };
 } // namespace MNN
 

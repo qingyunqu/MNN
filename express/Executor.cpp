@@ -10,6 +10,7 @@
 #include "core/Session.hpp"
 #include "core/TensorUtils.hpp"
 #include "Utils.hpp"
+#define MNN_OPEN_TIME_TRACE
 #include <MNN/AutoTime.hpp>
 #include "core/WrapExecution.hpp"
 #include "geometry/GeometryComputerUtils.hpp"
@@ -229,6 +230,12 @@ private:
     CommandBuffer mCmdBuffer;
     std::vector<std::shared_ptr<Execution>> mExecutions;
     std::map<const Op*, std::shared_ptr<Execution>> mCacheExes;
+
+    bool zeroInputs() {
+        return mInputs.empty();
+    }
+    ErrorCode swapout(const Tensor* tensor);
+    ErrorCode swapin(const Tensor* tensor);
 };
 void Executor::setShapeDirty(ComputeCache* cache) {
     cache->setShapeDirty();
@@ -284,8 +291,11 @@ Executor::ComputeCache::~ComputeCache() {
     mCacheExes.clear();
 }
 ErrorCode Executor::ComputeCache::compute() {
-    if (mShapeDirty) {
+    if (mShapeDirty) { // default true
         auto code = resize();
+        if (zeroInputs()) {
+            mExecutions.resize(mCmdBuffer.command.size());
+        }
         if (NO_ERROR != code) {
             return code;
         }
@@ -293,8 +303,10 @@ ErrorCode Executor::ComputeCache::compute() {
     if (!mContentDirty) {
         return NO_ERROR;
     }
+    /*在MNN训练的设定里面这两个for都没有什么实际的意义T^T*/
     for (auto& c : mInputInside) {
         if (c->mContentDirty) {
+            // InputType = VARP::INPUT
             return CALL_BACK_STOP;
         }
     }
@@ -304,30 +316,209 @@ ErrorCode Executor::ComputeCache::compute() {
             return code;
         }
     }
+//    printf("cache.minputs have %d content available directly and mExecution.size = %lu\n", cnt, mExecutions.size());
     mBackend->onExecuteBegin();
     mBackupBackend->onExecuteBegin();
     MNN_ASSERT(mExecutions.size() == mCmdBuffer.command.size());
     for (int i=0; i<mCmdBuffer.command.size(); ++i) {
+        AUTOTIME;
+//        printf("begin execution %d\n", i);
+        auto& cmd = mCmdBuffer.command[i];
+        //get Op
+        auto op = cmd.op;
+        bool origin = true;
+        ErrorCode code;
+        if (!cmd.buffer.empty()) {
+            origin = false;
+            op = flatbuffers::GetMutableRoot<Op>(cmd.buffer.data());
+        }
+        printf("current Op is %d:%s\n", op->type(), EnumNameOpType(op->type()));
 #ifdef MNN_EXPR_ENABLE_PROFILER
         Timer autoTime;
 #endif
-        auto& iter = mCmdBuffer.command[i];
-        auto code = mExecutions[i]->onExecute(iter.inputs, iter.outputs);
+        // set execution
+        mExecutions[i] = nullptr;
+        bool cacheed = false;
+        if (!mCacheExes.empty() && origin) {
+            auto iter = mCacheExes.find(op);
+            if (iter != mCacheExes.end()) {
+                mExecutions[i] = iter->second;
+                cacheed = true;
+            }
+        }
+        if (nullptr == mExecutions[i]) {
+            mExecutions[i].reset(mBackend->onCreate(cmd.inputs, cmd.outputs, op));
+            if (nullptr == mExecutions[i]) {
+                mExecutions[i].reset(mBackupBackend->onCreate(cmd.inputs, cmd.outputs, op));
+            }
+            if (nullptr == mExecutions[i]) {
+                return NOT_SUPPORT;
+            }
+        }
+        // Check if need wrap
+        bool needWrap = false;
+        auto bn = mExecutions[i]->backend();
+        auto iterType = bn->type();
+        for (int i=0; i<cmd.inputs.size(); ++i) {
+            if (!SizeComputer::opNeedContent(op->type(), i)) {
+                continue;
+            }
+            auto inpDes = TensorUtils::getDescribe(cmd.inputs[i]);
+            if (inpDes->memoryType == Tensor::InsideDescribe::MEMORY_VIRTUAL) {
+                for (auto& reg : inpDes->regions) {
+                    auto orgDes = TensorUtils::getDescribe(reg.origin);
+                    auto tensorBn = orgDes->backend;
+                    auto type = MNN_FORWARD_CPU;
+                    if (nullptr != tensorBn) {
+                        type = tensorBn->type();
+                    }
+                    if (iterType != type) {
+                        needWrap = true;
+                        break;
+                    }
+                }
+            } else {
+                auto tensorBn = inpDes->backend;
+                auto type = MNN_FORWARD_CPU;
+                if (nullptr != tensorBn) {
+                    type = tensorBn->type();
+                }
+                if (iterType != type) {
+                    needWrap = true;
+                    break;
+                }
+            }
+            if (needWrap) {
+                break;
+            }
+        }
+        if (needWrap && (!cacheed)) {
+            mExecutions[i] = std::make_shared<WrapExecution>(mBackupBackend.get(), mExecutions[i], false);
+        }
+        if ((op->type() == OpType_Convolution && cmd.inputs.size() == 1)) {
+            // TODO: Support Other op's cache
+            mCacheExes.insert(std::make_pair(op, mExecutions[i]));
+        }
+        //allocate memory for output tensors
+//        printf("allocate memory for output tensors\n");
+        for (auto t : cmd.outputs) {
+            auto des = TensorUtils::getDescribe(t);
+            if (nullptr == des->backend) {
+                TensorUtils::setLinearLayout(t);
+                auto res = bn->onAcquireBuffer(t, Backend::DYNAMIC);
+                des->backend = bn;
+                if (!res) {
+                    return OUT_OF_MEMORY;
+                }
+            }
+        }
+        //swapin input tensors if needed
+//        printf("swapin input tensors if needed\n");
+        /*
+        for (auto tensor: cmd.inputs) {
+            // tensor.backend != nullptr && usage == NORMAL
+            auto des = TensorUtils::getDescribe(tensor);
+            if (des->usage == Tensor::InsideDescribe::NORMAL &&
+                    des->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND &&
+                    nullptr != des->backend && tensor->buffer().host == nullptr) {
+                auto res = des->backend->onAcquireBuffer(tensor, Backend::DYNAMIC);
+                if (!res) {
+                    return OUT_OF_MEMORY;
+                }
+                code = swapin(tensor);
+                if (code != NO_ERROR) {
+                    return code;
+                }
+            }
+        }*/
+        // resize execution
+        code = mExecutions[i]->onResize(cmd.inputs, cmd.outputs);
+        if (NO_ERROR != code) {
+            return code;
+        }
+
+#ifdef MNN_EXPR_ENABLE_PROFILER
+        float costTime = (float)autoTime.durationInUs() / (float)1000;
+ExecutorScope::Current()->addOpCostTime((int)op->type(), costTime);
+#endif
+
+#ifdef MNN_EXPR_ENABLE_PROFILER
+        Timer autoTime;
+#endif
+        // execute Op
+        code = mExecutions[i]->onExecute(cmd.inputs, cmd.outputs);
         if (NO_ERROR != code) {
 #ifdef MNN_EXPRESS_ERROR_REPORT
-            auto op = iter.buffer.empty() ? iter.op : flatbuffers::GetRoot<Op>(iter.buffer.data());
-            MNN_ERROR("Error to compute for %s, \n", EnumNameOpType(op->type()));
+            auto op = cmd.buffer.empty() ? cmd.op : flatbuffers::GetRoot<Op>(cmd.buffer.data());
+    MNN_ERROR("Error to compute for %s, \n", EnumNameOpType(op->type()));
 #endif
             mBackend->onExecuteEnd();
             return code;
         }
+        printf("\t");
+        for (int i = 0; i < cmd.inputs.size(); i++) {
+            printf("input[%d].format = %s, input[%d].shape: ", i, cmd.inputs[i]->myGetDimensionType().c_str(), i);
+            cmd.inputs[i]->myPrintShape();
+            printf("\t");
+        }
+        printf("\n\t");
+        for (int i = 0; i < cmd.outputs.size(); i++) {
+            printf("output[%d].format = %s\toutput[%d].shape: ", i, cmd.outputs[i]->myGetDimensionType().c_str(), i);
+            cmd.outputs[i]->myPrintShape();
+            printf("\t");
+        }
+        printf("\n\t");
+        // release memory for no-usable tensors
+        for (auto v = 0; v<cmd.inputs.size(); ++v) {
+            if (!SizeComputer::opNeedContent(op->type(), v)) {
+                continue;
+            }
+            auto t = cmd.inputs[v];
+            auto des = TensorUtils::getDescribe(t);
+            if (des->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND) {
+                if (des->usage == Tensor::InsideDescribe::NORMAL) {
+                    des->useCount-=1;
+                    if (nullptr != des->backend) {
+                        if (0 == des->useCount) {
+                            des->backend->onReleaseBuffer(t, Backend::DYNAMIC);
+                        } /*else {
+                    code = swapout(t);
+                    if (code != NO_ERROR){
+                        return code;
+                    }
+                    // des->backend->onReleaseBuffer(t, Backend::DYNAMIC);
+                }*/
+
+                    }
+                }
+            }
+            for (auto& s : des->regions) {
+                auto subDes = TensorUtils::getDescribe(s.origin);
+                MNN_ASSERT(subDes->regions.empty());
+                if (subDes->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND && subDes->usage == Tensor::InsideDescribe::NORMAL) {
+                    subDes->useCount-=1;
+                    if (nullptr != subDes->backend) {
+                        if (0 == subDes->useCount) {
+                            subDes->backend->onReleaseBuffer(s.origin, Backend::DYNAMIC);
+                        } /*else {
+                    code = swapout(s.origin);
+                    if (code != NO_ERROR){
+                        return code;
+                    }
+                    // subDes->backend->onReleaseBuffer(s.origin, Backend::DYNAMIC);
+                }*/
+
+                    }
+                }
+            }
+        }
 #ifdef MNN_EXPR_ENABLE_PROFILER
         float costTime = (float)autoTime.durationInUs() / (float)1000;
-        auto op = iter.op;
-        if (!iter.buffer.empty()) {
-            op = flatbuffers::GetMutableRoot<Op>(iter.buffer.data());
-        }
-        ExecutorScope::Current()->addOpCostTime((int)op->type(), costTime);
+auto op = iter.op;
+if (!iter.buffer.empty()) {
+    op = flatbuffers::GetMutableRoot<Op>(iter.buffer.data());
+}
+ExecutorScope::Current()->addOpCostTime((int)op->type(), costTime);
 #endif
     }
     mBackend->onExecuteEnd();
@@ -335,6 +526,7 @@ ErrorCode Executor::ComputeCache::compute() {
     mContentDirty = false;
     return NO_ERROR;
 }
+
 ErrorCode Executor::ComputeCache::resize() {
     if (!mShapeDirty) {
         return NO_ERROR;
@@ -355,18 +547,23 @@ ErrorCode Executor::ComputeCache::resize() {
     {
 #ifdef MNN_EXPR_ENABLE_PROFILER
         {
-        Timer autoTime;
+Timer autoTime;
 #endif
         mCmdBuffer.command.clear();
         mCmdBuffer.extras.clear();
-        mBackend->onClearBuffer();
-        mBackupBackend->onClearBuffer();
+        // 每个cache的backend都是重新new的，并不是通过shared_ptr
+        // 但是bufferAllocater是共享的啊……所以为什么药在resize的时候clearbuffer？
+
+        // 实际上每次训练都是把要计算的var压缩到了一个cache里面了
+        // 所以这里的clear实际上没有用，因为每个batch只会有一个cache
+        // 所以在每个batch结束的时候那些tensor都被删掉了，内存已经被返回给backend
+        // 这里的allocated dynamic pool就是null的
         mExecutions.clear();
         mContext.clear();
 #ifdef MNN_EXPR_ENABLE_PROFILER
         float costTime = (float)autoTime.durationInUs() / (float)1000;
-        ExecutorScope::Current()->addOpCostTime((int)OpType_While, costTime);
-        }
+ExecutorScope::Current()->addOpCostTime((int)OpType_While, costTime);
+}
 #endif
         CommandBuffer buffer;
         for (int unitIndex = 0; unitIndex < mUnits.size(); ++unitIndex) {
@@ -412,25 +609,25 @@ ErrorCode Executor::ComputeCache::resize() {
             }
 #ifdef MNN_EXPR_ENABLE_PROFILER
             {
-            Timer autoTime;
+    Timer autoTime;
 #endif
             auto geo = GeometryComputer::search(iter.op->type());
             geo->compute(iter.op, iter.inputs, iter.outputs, mContext, buffer);
 #ifdef MNN_EXPR_ENABLE_PROFILER
             float costTime = (float)autoTime.durationInUs() / (float)1000;
-                ExecutorScope::Current()->addOpCostTime((int)iter.op->type(), costTime);
-            }
+        ExecutorScope::Current()->addOpCostTime((int)iter.op->type(), costTime);
+    }
 #endif
         }
 #ifdef MNN_EXPR_ENABLE_PROFILER
         {
-        Timer autoTime;
+Timer autoTime;
 #endif
         GeometryComputerUtils::makeRaster(buffer, mCmdBuffer, mContext);
 #ifdef MNN_EXPR_ENABLE_PROFILER
         float costTime = (float)autoTime.durationInUs() / (float)1000;
-        ExecutorScope::Current()->addOpCostTime((int)OpType_If, costTime);
-        }
+ExecutorScope::Current()->addOpCostTime((int)OpType_If, costTime);
+}
 #endif
     }
     for (int k=0; k<mCmdBuffer.command.size(); ++k) {
@@ -459,50 +656,62 @@ ErrorCode Executor::ComputeCache::resize() {
     /** Encoder End */
 
     /** Prepare Begin */
-    mBackend->onResizeBegin();
-    mExecutions.resize(mCmdBuffer.command.size());
-    for (int k=0; k<mCmdBuffer.command.size(); ++k) {
-        auto& cmd = mCmdBuffer.command[k];
-        auto op = cmd.op;
-        bool origin = true;
-        if (!cmd.buffer.empty()) {
-            origin = false;
-            op = flatbuffers::GetMutableRoot<Op>(cmd.buffer.data());
-        }
+    if (!zeroInputs()) {
+        mBackend->onResizeBegin();
+        mExecutions.resize(mCmdBuffer.command.size());
+        for (int k=0; k<mCmdBuffer.command.size(); ++k) {
+            auto& cmd = mCmdBuffer.command[k];
+            auto op = cmd.op;
+            bool origin = true;
+            if (!cmd.buffer.empty()) {
+                origin = false;
+                op = flatbuffers::GetMutableRoot<Op>(cmd.buffer.data());
+            }
 #ifdef MNN_EXPR_ENABLE_PROFILER
-        Timer autoTime;
+            Timer autoTime;
 #endif
-        mExecutions[k] = nullptr;
-        bool cacheed = false;
-        if (!mCacheExes.empty() && origin) {
-            auto iter = mCacheExes.find(op);
-            if (iter != mCacheExes.end()) {
-                mExecutions[k] = iter->second;
-                cacheed = true;
-            }
-        }
-        if (nullptr == mExecutions[k]) {
-            mExecutions[k].reset(mBackend->onCreate(cmd.inputs, cmd.outputs, op));
-            if (nullptr == mExecutions[k]) {
-                mExecutions[k].reset(mBackupBackend->onCreate(cmd.inputs, cmd.outputs, op));
+            mExecutions[k] = nullptr;
+            bool cacheed = false;
+            if (!mCacheExes.empty() && origin) {
+                auto iter = mCacheExes.find(op);
+                if (iter != mCacheExes.end()) {
+                    mExecutions[k] = iter->second;
+                    cacheed = true;
+                }
             }
             if (nullptr == mExecutions[k]) {
-                return NOT_SUPPORT;
+                mExecutions[k].reset(mBackend->onCreate(cmd.inputs, cmd.outputs, op));
+                if (nullptr == mExecutions[k]) {
+                    mExecutions[k].reset(mBackupBackend->onCreate(cmd.inputs, cmd.outputs, op));
+                }
+                if (nullptr == mExecutions[k]) {
+                    return NOT_SUPPORT;
+                }
             }
-        }
-        // Check if need wrap
-        bool needWrap = false;
-        auto bn = mExecutions[k]->backend();
-        auto iterType = bn->type();
-        for (int i=0; i<cmd.inputs.size(); ++i) {
-            if (!SizeComputer::opNeedContent(op->type(), i)) {
-                continue;
-            }
-            auto inpDes = TensorUtils::getDescribe(cmd.inputs[i]);
-            if (inpDes->memoryType == Tensor::InsideDescribe::MEMORY_VIRTUAL) {
-                for (auto& reg : inpDes->regions) {
-                    auto orgDes = TensorUtils::getDescribe(reg.origin);
-                    auto tensorBn = orgDes->backend;
+            // Check if need wrap
+            bool needWrap = false;
+            auto bn = mExecutions[k]->backend();
+            auto iterType = bn->type();
+            for (int i=0; i<cmd.inputs.size(); ++i) {
+                if (!SizeComputer::opNeedContent(op->type(), i)) {
+                    continue;
+                }
+                auto inpDes = TensorUtils::getDescribe(cmd.inputs[i]);
+                if (inpDes->memoryType == Tensor::InsideDescribe::MEMORY_VIRTUAL) {
+                    for (auto& reg : inpDes->regions) {
+                        auto orgDes = TensorUtils::getDescribe(reg.origin);
+                        auto tensorBn = orgDes->backend;
+                        auto type = MNN_FORWARD_CPU;
+                        if (nullptr != tensorBn) {
+                            type = tensorBn->type();
+                        }
+                        if (iterType != type) {
+                            needWrap = true;
+                            break;
+                        }
+                    }
+                } else {
+                    auto tensorBn = inpDes->backend;
                     auto type = MNN_FORWARD_CPU;
                     if (nullptr != tensorBn) {
                         type = tensorBn->type();
@@ -512,81 +721,100 @@ ErrorCode Executor::ComputeCache::resize() {
                         break;
                     }
                 }
-            } else {
-                auto tensorBn = inpDes->backend;
-                auto type = MNN_FORWARD_CPU;
-                if (nullptr != tensorBn) {
-                    type = tensorBn->type();
-                }
-                if (iterType != type) {
-                    needWrap = true;
+                if (needWrap) {
                     break;
                 }
             }
-            if (needWrap) {
-                break;
+            if (needWrap && (!cacheed)) {
+                mExecutions[k].reset(new WrapExecution(mBackupBackend.get(), mExecutions[k], false));
             }
-        }
-        if (needWrap && (!cacheed)) {
-            mExecutions[k].reset(new WrapExecution(mBackupBackend.get(), mExecutions[k], false));
-        }
-        if ((op->type() == OpType_Convolution && cmd.inputs.size() == 1)) {
-            // TODO: Support Other op's cache
-            mCacheExes.insert(std::make_pair(op, mExecutions[k]));
-        }
-        for (auto t : cmd.outputs) {
-            auto des = TensorUtils::getDescribe(t);
-            if (nullptr == des->backend) {
-                TensorUtils::setLinearLayout(t);
-                auto res = bn->onAcquireBuffer(t, Backend::DYNAMIC);
-                des->backend = bn;
-                if (!res) {
-                    return OUT_OF_MEMORY;
-                }
+            if ((op->type() == OpType_Convolution && cmd.inputs.size() == 1)) {
+                // TODO: Support Other op's cache
+                mCacheExes.insert(std::make_pair(op, mExecutions[k]));
             }
-        }
-        auto code= mExecutions[k]->onResize(cmd.inputs, cmd.outputs);
-        if (NO_ERROR != code) {
-            return code;
-        }
-        for (auto v = 0; v<cmd.inputs.size(); ++v) {
-            if (!SizeComputer::opNeedContent(op->type(), v)) {
-                continue;
-            }
-            auto t = cmd.inputs[v];
-            auto des = TensorUtils::getDescribe(t);
-            if (des->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND) {
-                if (des->usage == Tensor::InsideDescribe::NORMAL) {
-                    des->useCount-=1;
-                    if (0 == des->useCount && nullptr != des->backend) {
-                        des->backend->onReleaseBuffer(t, Backend::DYNAMIC);
+            for (auto t : cmd.outputs) {
+                auto des = TensorUtils::getDescribe(t);
+                if (nullptr == des->backend) {
+                    TensorUtils::setLinearLayout(t);
+                    auto res = bn->onAcquireBuffer(t, Backend::DYNAMIC);
+                    des->backend = bn;
+                    if (!res) {
+                        return OUT_OF_MEMORY;
                     }
                 }
             }
-            for (auto& s : des->regions) {
-                auto subDes = TensorUtils::getDescribe(s.origin);
-                MNN_ASSERT(subDes->regions.empty());
-                if (subDes->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND && subDes->usage == Tensor::InsideDescribe::NORMAL) {
-                    subDes->useCount-=1;
-                    if (0 == subDes->useCount && nullptr != subDes->backend) {
-                        subDes->backend->onReleaseBuffer(s.origin, Backend::DYNAMIC);
+            auto code= mExecutions[k]->onResize(cmd.inputs, cmd.outputs);
+            if (NO_ERROR != code) {
+                return code;
+            }
+            for (auto v = 0; v<cmd.inputs.size(); ++v) {
+                if (!SizeComputer::opNeedContent(op->type(), v)) {
+                    continue;
+                }
+                auto t = cmd.inputs[v];
+                auto des = TensorUtils::getDescribe(t);
+                if (des->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND) {
+                    if (des->usage == Tensor::InsideDescribe::NORMAL) {
+                        des->useCount-=1;
+                        if (0 == des->useCount && nullptr != des->backend) {
+                            des->backend->onReleaseBuffer(t, Backend::DYNAMIC);
+                        }
+                    }
+                }
+                for (auto& s : des->regions) {
+                    auto subDes = TensorUtils::getDescribe(s.origin);
+                    MNN_ASSERT(subDes->regions.empty());
+                    if (subDes->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND && subDes->usage == Tensor::InsideDescribe::NORMAL) {
+                        subDes->useCount-=1;
+                        if (0 == subDes->useCount && nullptr != subDes->backend) {
+                            subDes->backend->onReleaseBuffer(s.origin, Backend::DYNAMIC);
+                        }
                     }
                 }
             }
-        }
 #ifdef MNN_EXPR_ENABLE_PROFILER
-        float costTime = (float)autoTime.durationInUs() / (float)1000;
-        ExecutorScope::Current()->addOpCostTime((int)op->type(), costTime);
+            float costTime = (float)autoTime.durationInUs() / (float)1000;
+    ExecutorScope::Current()->addOpCostTime((int)op->type(), costTime);
 #endif
+        }
+        mBackend->onResizeEnd();
     }
-    mBackend->onResizeEnd();
-
     /** Prepare End */
 
     mContentDirty = true;
     return NO_ERROR;
 }
 
+ErrorCode Executor::ComputeCache::swapout(const Tensor *tensor) {
+    char fn[32];
+    sprintf(fn, "swap/%d.mnn.tensor", tensor->ID());
+    FILE* f = fopen(fn, "wb");
+    int numwrite = -1;
+    if(f != nullptr) {
+        numwrite = fwrite(tensor->host<void>(), sizeof(char), tensor->size(), f);
+//        printf("%d\n", numwrite);
+    }
+    if (numwrite != tensor->size()){
+        return SWAP_OUT_ERROR;
+    }
+//    printf("swapout %d bytes of tensor:%d \n", tensor->size(), tensor->ID());
+    return NO_ERROR;
+}
+
+ErrorCode Executor::ComputeCache::swapin(const Tensor *tensor) {
+    char fn[32];
+    sprintf(fn, "swap/%d.mnn.tensor", tensor->ID());
+    FILE* f = fopen(fn, "rb");
+    int numread = -1;
+    if (f != nullptr) {
+        numread = fread(tensor->host<void>(), sizeof(char), tensor->size(), f);
+    }
+    if (numread != tensor->size()){
+        return SWAP_IN_ERROR;
+    }
+//    printf("swapin %d bytes of tensor:%d \n", tensor->size(), tensor->ID());
+    return NO_ERROR;
+}
 static void _collectExecuteUnit(std::vector<std::shared_ptr<Executor::Unit>>& dest, EXPRP expr) {
     auto& inputs = expr->inputs();
     auto& req = expr->inside()->mReq.contentNeedContent;

@@ -533,8 +533,9 @@ ELSE()
 ENDIF()
 
 # Train
+add_subdirectory(tools/train)
 IF(MNN_BUILD_TRAIN)
-  add_subdirectory(tools/train)
+#  add_subdirectory(tools/train)
   IF(MNN_SEP_BUILD)
     list(APPEND MNN_DEPS MNNTrain)
   ELSE()

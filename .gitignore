@@ -357,3 +357,5 @@ project/ios/ios_32
 project/ios/MNN.framework
 
 pymnn_build/
+dataset/
+cmake-build-debug/
