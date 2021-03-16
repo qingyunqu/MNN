@@ -125,7 +125,7 @@ private:
     bool mSupportDotInt8 = false;
     bool mSupportDotAccInt8 = false;
     GpuType mGpuType;
-    GpuMemObject mMemType = AUTO;
+    GpuMemObject mMemType = BUFFER;
     CLTuneLevel mTuneLevel = Wide;
     std::string mDeviceName;
     bool isSetWorkGroupAttribute = false;
