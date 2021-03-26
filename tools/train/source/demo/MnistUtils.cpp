@@ -16,6 +16,7 @@
 #include "MnistDataset.hpp"
 #include <MNN/expr/NN.hpp>
 #include "SGD.hpp"
+#include "MicroSGD.hpp"
 #define MNN_OPEN_TIME_TRACE
 #include <MNN/AutoTime.hpp>
 #include "ADAM.hpp"
@@ -28,7 +29,7 @@ using namespace MNN;
 using namespace MNN::Express;
 using namespace MNN::Train;
 
-void MnistUtils::train(std::shared_ptr<Module> model, std::string root) {
+void MnistUtils::train(std::shared_ptr<Module> model, std::string root, int batchsize, int microBatchsize) {
     {
         // Load snapshot
         auto para = Variable::load("mnist.snapshot.mnn");
@@ -36,19 +37,27 @@ void MnistUtils::train(std::shared_ptr<Module> model, std::string root) {
     }
     auto exe = Executor::getGlobalExecutor();
     BackendConfig config;
-    exe->setGlobalExecutorConfig(MNN_FORWARD_CUDA, config, 4);
-    std::shared_ptr<SGD> sgd(new SGD(model));
+    exe->setGlobalExecutorConfig(MNN_FORWARD_CPU, config, 4);
+    size_t trainBatchsize, trainMicroBatchsize;
+    if (batchsize != -1 && microBatchsize != -1 && batchsize % microBatchsize == 0) {
+        trainBatchsize = batchsize;
+        trainMicroBatchsize = microBatchsize;
+    } else {
+        trainBatchsize = trainMicroBatchsize = 8;
+    }
+//    std::shared_ptr<SGD> sgd(new SGD(model));
+    std::shared_ptr<MicroSGD> sgd(new MicroSGD(model, trainBatchsize, trainMicroBatchsize));
     sgd->setMomentum(0.9f);
     // sgd->setMomentum2(0.99f);
     sgd->setWeightDecay(0.0005f);
 
     auto dataset = MnistDataset::create(root, MnistDataset::Mode::TRAIN);
     // the stack transform, stack [1, 28, 28] to [n, 1, 28, 28]
-    const size_t batchSize  = 64;
+//    const size_t batchSize  = 64;
     const size_t numWorkers = 0;
     bool shuffle            = true;
 
-    auto dataLoader = std::shared_ptr<DataLoader>(dataset.createLoader(batchSize, true, shuffle, numWorkers));
+    auto dataLoader = std::shared_ptr<DataLoader>(dataset.createLoader(trainMicroBatchsize, true, shuffle, numWorkers));
 
     size_t iterations = dataLoader->iterNumber();
 
@@ -72,20 +81,25 @@ void MnistUtils::train(std::shared_ptr<Module> model, std::string root) {
             Timer _100Time;
             int lastIndex = 0;
             int moveBatchSize = 0;
-            for (int i = 0; i < iterations; i++) {
-                // AUTOTIME;
+            for (int i = 0; i < 25 * trainBatchsize / trainMicroBatchsize; i++) {
+                AUTOTIME;
+                MNN_MEMORY_PROFILE("begin an iteration")
                 auto trainData  = dataLoader->next();
                 auto example    = trainData[0];
                 auto cast       = _Cast<float>(example.first[0]);
                 example.first[0] = cast * _Const(1.0f / 255.0f);
                 moveBatchSize += example.first[0]->getInfo()->dim[0];
+//                example.first[0]->readMap<float>();return;
 
                 // Compute One-Hot
                 auto newTarget = _OneHot(_Cast<int32_t>(example.second[0]), _Scalar<int>(10), _Scalar<float>(1.0f),
                                          _Scalar<float>(0.0f));
 
+//                newTarget->readMap<float>();return;
                 auto predict = model->forward(example.first[0]);
+//                predict->readMap<float>();return;
                 auto loss    = _CrossEntropy(predict, newTarget);
+//                loss->readMap<float>();return;
 //#define DEBUG_GRAD
 #ifdef DEBUG_GRAD
                 {
@@ -110,7 +124,7 @@ void MnistUtils::train(std::shared_ptr<Module> model, std::string root) {
 #endif
                 float rate   = LrScheduler::inv(0.01, epoch * iterations + i, 0.0001, 0.75);
                 sgd->setLearningRate(rate);
-                if (moveBatchSize % (10 * batchSize) == 0 || i == iterations - 1) {
+                /*if (moveBatchSize % (10 * batchSize) == 0 || i == iterations - 1) {
                     std::cout << "epoch: " << (epoch);
                     std::cout << "  " << moveBatchSize << " / " << dataLoader->size();
                     std::cout << " loss: " << loss->readMap<float>()[0];
@@ -119,10 +133,11 @@ void MnistUtils::train(std::shared_ptr<Module> model, std::string root) {
                     std::cout.flush();
                     _100Time.reset();
                     lastIndex = i;
-                }
+                }*/
                 sgd->step(loss);
-                return;
+//                return;
             }
+            return;
         }
         Variable::save(model->parameters(), "mnist.snapshot.mnn");
         {

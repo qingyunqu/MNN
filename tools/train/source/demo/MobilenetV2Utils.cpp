@@ -16,6 +16,7 @@
 #include "DemoUnit.hpp"
 #include <MNN/expr/NN.hpp>
 #include "SGD.hpp"
+#include "MicroSGD.hpp"
 #define MNN_OPEN_TIME_TRACE
 #include <MNN/AutoTime.hpp>
 #include "ADAM.hpp"
@@ -31,13 +32,26 @@ using namespace MNN::Express;
 using namespace MNN::Train;
 
 void MobilenetV2Utils::train(std::shared_ptr<Module> model, const int numClasses, const int addToLabel,
-                                std::string trainImagesFolder, std::string trainImagesTxt,
-                                std::string testImagesFolder, std::string testImagesTxt,
-                                const int trainQuantDelayEpoch, const int quantBits) {
+                            std::string trainImagesFolder, std::string trainImagesTxt,
+                            std::string testImagesFolder, std::string testImagesTxt,
+                            const int batchsize, const int microBatchsize,
+                            const int trainQuantDelayEpoch, const int quantBits) {
     auto exe = Executor::getGlobalExecutor();
     BackendConfig config;
     exe->setGlobalExecutorConfig(MNN_FORWARD_USER_1, config, 2);
-    std::shared_ptr<SGD> solver(new SGD(model));
+//    std::shared_ptr<SGD> solver(new SGD(model));
+
+    int trainBatchSize, trainMicroBatchsize;
+    int trainNumWorkers = 1;
+    int testBatchSize = 1;
+    int testNumWorkers = 0;
+    if (batchsize != -1 && microBatchsize != -1 && batchsize % microBatchsize == 0) {
+        trainBatchSize = batchsize;
+        trainMicroBatchsize = microBatchsize;
+    } else {
+        trainBatchSize = trainMicroBatchsize = 8;
+    }
+    std::shared_ptr<MicroSGD> solver(new MicroSGD(model, trainBatchSize, trainMicroBatchsize));
     solver->setMomentum(0.9f);
     // solver->setMomentum2(0.99f);
     solver->setWeightDecay(0.00004f);
@@ -54,12 +68,7 @@ void MobilenetV2Utils::train(std::shared_ptr<Module> model, const int numClasses
     auto trainDataset = ImageDataset::create(trainImagesFolder, trainImagesTxt, datasetConfig.get(), readAllImagesToMemory);
     auto testDataset = ImageDataset::create(testImagesFolder, testImagesTxt, datasetConfig.get(), readAllImagesToMemory);
 
-    const int trainBatchSize = 8;
-    const int trainNumWorkers = 1;
-    const int testBatchSize = 1;
-    const int testNumWorkers = 0;
-
-    auto trainDataLoader = trainDataset.createLoader(trainBatchSize, true, true, trainNumWorkers);
+    auto trainDataLoader = trainDataset.createLoader(trainMicroBatchsize, true, true, trainNumWorkers);
     auto testDataLoader = testDataset.createLoader(testBatchSize, true, false, testNumWorkers);
 
     const int trainIterations = trainDataLoader->iterNumber();
@@ -81,14 +90,19 @@ void MobilenetV2Utils::train(std::shared_ptr<Module> model, const int numClasses
                 // turn model to train quant model
                 std::static_pointer_cast<PipelineModule>(model)->toTrainQuant(quantBits);
             }
-            for (int i = 0; i < trainIterations; i++) {
+            for (int i = 0; i < 25 * trainBatchSize / trainMicroBatchsize; i++) {
+                if (i % trainIterations == 0) {
+                    trainDataLoader->reset();
+                }
                 AUTOTIME;
+                MNN_MEMORY_PROFILE("begin an iteration")
+                printf("begin an iter\n");
                 auto trainData  = trainDataLoader->next();
                 auto example    = trainData[0];
 
                 // Compute One-Hot
-                auto newTarget = _OneHot(_Cast<int32_t>(_Squeeze(example.second[0] + _Scalar<int32_t>(addToLabel), {})),
-                                  _Scalar<int>(numClasses), _Scalar<float>(1.0f),
+                auto newTarget = _OneHot(_Cast<int32_t>(_Squeeze(example.second[0] + _Scalar<int32_t>(addToLabel), {1})),
+                                         _Scalar<int>(numClasses), _Scalar<float>(1.0f),
                                          _Scalar<float>(0.0f));
 
                 auto predict = model->forward(_Convert(example.first[0], NC4HW4));
@@ -96,14 +110,15 @@ void MobilenetV2Utils::train(std::shared_ptr<Module> model, const int numClasses
                 // float rate   = LrScheduler::inv(0.0001, solver->currentStep(), 0.0001, 0.75);
                 float rate = 1e-5;
                 solver->setLearningRate(rate);
-                if (solver->currentStep() % 10 == 0) {
-                    std::cout << "train iteration: " << solver->currentStep();
-                    std::cout << " loss: " << loss->readMap<float>()[0];
-                    std::cout << " lr: " << rate << std::endl;
-                }
+//                if (solver->currentStep() % 10 == 0) {
+//                    std::cout << "train iteration: " << solver->currentStep();
+//                    std::cout << " loss: " << loss->readMap<float>()[0];
+//                    std::cout << " lr: " << rate << std::endl;
+//                }
                 solver->step(loss);
-                return;
+//                return;
             }
+            return;
         }
 
         int correct = 0;

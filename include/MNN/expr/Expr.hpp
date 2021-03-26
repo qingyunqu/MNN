@@ -111,6 +111,13 @@ public:
         int size;
         void syncSize();
         std::shared_ptr<TensorArrayAttr> tensorArrayAttr;
+        void printShape() const {
+            printf("%d: [", (int)dim.size());
+            for(auto i: dim) {
+                printf("%d, ", i);
+            }
+            printf("]\n");
+        }
     };
     const std::string& name() const;
     void setName(const std::string& name);

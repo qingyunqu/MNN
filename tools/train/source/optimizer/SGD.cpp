@@ -111,6 +111,7 @@ std::map<Express::VARP, Express::VARP> SGD::onGetNextParameter(Express::VARP los
     printf("finish replace & start compute update value\n");
     for (auto& iter : grad) {
         // apply regularization
+        MNN_MEMORY_PROFILE("\t")
         auto addWeightDecayGrad = regularizeParameters(iter.first, iter.second);
         addWeightDecayGrad.fix(Express::VARP::CONSTANT);
         // apply momentum, etc.

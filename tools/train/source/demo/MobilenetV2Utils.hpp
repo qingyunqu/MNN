@@ -17,6 +17,7 @@ public:
     static void train(std::shared_ptr<MNN::Express::Module> model, const int numClasses, const int addToLabel,
                       std::string trainImagesFolder, std::string trainImagesTxt,
                       std::string testImagesFolder, std::string testImagesTxt,
+                      const int batchsize = -1, const int microBatchsize = -1,
                       const int trainQuantDelayEpoch = 10, const int quantBits = 8);
 };
 

@@ -321,7 +321,7 @@ ErrorCode Executor::ComputeCache::compute() {
     mBackupBackend->onExecuteBegin();
     MNN_ASSERT(mExecutions.size() == mCmdBuffer.command.size());
     for (int i=0; i<mCmdBuffer.command.size(); ++i) {
-        AUTOTIME;
+//        AUTOTIME;
 //        printf("begin execution %d\n", i);
         auto& cmd = mCmdBuffer.command[i];
         //get Op
@@ -332,7 +332,7 @@ ErrorCode Executor::ComputeCache::compute() {
             origin = false;
             op = flatbuffers::GetMutableRoot<Op>(cmd.buffer.data());
         }
-        printf("current Op is %d:%s\n", op->type(), EnumNameOpType(op->type()));
+//        printf("current Op is %d:%s\t", op->type(), EnumNameOpType(op->type()));
 #ifdef MNN_EXPR_ENABLE_PROFILER
         Timer autoTime;
 #endif
@@ -455,10 +455,18 @@ ExecutorScope::Current()->addOpCostTime((int)op->type(), costTime);
             mBackend->onExecuteEnd();
             return code;
         }
-        printf("\t");
+        /*printf("\t");
         for (int i = 0; i < cmd.inputs.size(); i++) {
-            printf("input[%d].format = %s, input[%d].shape: ", i, cmd.inputs[i]->myGetDimensionType().c_str(), i);
-            cmd.inputs[i]->myPrintShape();
+            if (op->type() == OpType_Raster) {
+                // only valid for single convert like broadcast/reshape, succeed in linear regression
+                // fail in complex models like MobilenetV2
+                auto& ori = TensorUtils::getDescribe(cmd.inputs[i])->regions[0].origin;
+                printf("input[%d].format = %s, input[%d].shape: ", i, ori->myGetDimensionType().c_str(), i);
+                ori->myPrintShape();
+            } else {
+                printf("input[%d].format = %s, input[%d].shape: ", i, cmd.inputs[i]->myGetDimensionType().c_str(), i);
+                cmd.inputs[i]->myPrintShape();
+            }
             printf("\t");
         }
         printf("\n\t");
@@ -467,7 +475,7 @@ ExecutorScope::Current()->addOpCostTime((int)op->type(), costTime);
             cmd.outputs[i]->myPrintShape();
             printf("\t");
         }
-        printf("\n\t");
+        printf("\n\t");*/
         // release memory for no-usable tensors
         for (auto v = 0; v<cmd.inputs.size(); ++v) {
             if (!SizeComputer::opNeedContent(op->type(), v)) {
@@ -482,12 +490,12 @@ ExecutorScope::Current()->addOpCostTime((int)op->type(), costTime);
                         if (0 == des->useCount) {
                             des->backend->onReleaseBuffer(t, Backend::DYNAMIC);
                         } /*else {
-                    code = swapout(t);
-                    if (code != NO_ERROR){
-                        return code;
-                    }
-                    // des->backend->onReleaseBuffer(t, Backend::DYNAMIC);
-                }*/
+                            code = swapout(t);
+                            if (code != NO_ERROR){
+                                return code;
+                            }
+                            // des->backend->onReleaseBuffer(t, Backend::DYNAMIC);
+                        }*/
 
                     }
                 }
@@ -501,12 +509,12 @@ ExecutorScope::Current()->addOpCostTime((int)op->type(), costTime);
                         if (0 == subDes->useCount) {
                             subDes->backend->onReleaseBuffer(s.origin, Backend::DYNAMIC);
                         } /*else {
-                    code = swapout(s.origin);
-                    if (code != NO_ERROR){
-                        return code;
-                    }
-                    // subDes->backend->onReleaseBuffer(s.origin, Backend::DYNAMIC);
-                }*/
+                            code = swapout(s.origin);
+                            if (code != NO_ERROR){
+                                return code;
+                            }
+                            // subDes->backend->onReleaseBuffer(s.origin, Backend::DYNAMIC);
+                        }*/
 
                     }
                 }

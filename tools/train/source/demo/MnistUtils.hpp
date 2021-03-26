@@ -11,6 +11,6 @@
 #include <MNN/expr/Module.hpp>
 class MnistUtils {
 public:
-    static void train(std::shared_ptr<MNN::Express::Module> model, std::string root);
+    static void train(std::shared_ptr<MNN::Express::Module> model, std::string root, int batchsize = -1, int microBatchsize = -1);
 };
 #endif
