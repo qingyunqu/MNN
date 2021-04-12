@@ -1,1 +1,1 @@
-pid=`pgrep usage` ; su -c kill -9 $pid
+pid=`pgrep -f usage` ; su -0 kill -9 $pid

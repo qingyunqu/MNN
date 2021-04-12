@@ -16,7 +16,7 @@
 #include "Lenet.hpp"
 #include "Alexnet.hpp"
 #include "GoogLeNet.hpp"
-#include "Squeezenet.hpp"
+#include "SqueezeNet.hpp"
 #include "MnistBenchmarkUtils.hpp"
 #include <MNN/expr/NN.hpp>
 #define MNN_OPEN_TIME_TRACE

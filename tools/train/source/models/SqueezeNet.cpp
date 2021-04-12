@@ -107,6 +107,7 @@ std::vector<Express::VARP> Squeezenet::onForward(const std::vector<Express::VARP
     x      = fire8->forward(x);
     x      = conv2->forward(x);
     x      = _AvePool(x, {14, 14}, {1, 1}, VALID);
+    x      = _Reshape(x, {0, -1});
     return {x};
 }
 

@@ -31,6 +31,13 @@ using namespace MNN;
 using namespace MNN::Express;
 using namespace MNN::Train;
 
+inline uint64_t MNN_TIME() {
+    struct timeval Current;
+    gettimeofday(&Current, nullptr);
+    uint64_t ret_time = Current.tv_sec * 1000000 + Current.tv_usec;
+    return ret_time;
+}
+
 void MobilenetV2BenchmarkUtils::train(std::shared_ptr<Module> model, const int numClasses, const int addToLabel,
                                 std::string trainImagesFolder, std::string trainImagesTxt,
                                 std::string testImagesFolder, std::string testImagesTxt, const int BatchSize,
@@ -78,8 +85,6 @@ void MobilenetV2BenchmarkUtils::train(std::shared_ptr<Module> model, const int n
     const int trainIterations = trainDataLoader->iterNumber();
     const int testIterations = testDataLoader->iterNumber();
 
-    // const int usedSize = 1000;
-    // const int testIterations = usedSize / testBatchSize;
     std::vector<float> latency;
 
     for (int epoch = 0; epoch < 1; ++epoch) {
@@ -110,25 +115,18 @@ void MobilenetV2BenchmarkUtils::train(std::shared_ptr<Module> model, const int n
                 // float rate   = LrScheduler::inv(0.0001, solver->currentStep(), 0.0001, 0.75);
                 float rate = 1e-5;
                 solver->setLearningRate(rate);
-                // if (solver->currentStep() % 10 == 0) {
-                if (true) {
+                if (solver->currentStep() % 10 == 0) {
                     std::cout << "train iteration: " << solver->currentStep();
                     std::cout << " loss: " << loss->readMap<float>()[0];
                     std::cout << " lr: " << rate << std::endl;
                 }
                 {
-                struct timeval Current;
-                gettimeofday(&Current, nullptr);
-                uint64_t mLastResetTime = Current.tv_sec * 1000000 + Current.tv_usec;
 
+                uint64_t mLastResetTime = MNN_TIME();
                 solver->step(loss);
-
-                gettimeofday(&Current, nullptr);
-                auto lastTime = Current.tv_sec * 1000000 + Current.tv_usec;
+                auto lastTime = MNN_TIME();
                 auto durations = lastTime - mLastResetTime;
-                // MNN_PRINT("duration is %f ms \n", (float)durations / 1000.0f);
                 latency.push_back((float)durations / 1000.0f);
-                // MNN_PRINT("第%d个iteration的latency是：%f\n", i, latency.back());
                 }
             }
 
@@ -156,7 +154,7 @@ void MobilenetV2BenchmarkUtils::train(std::shared_ptr<Module> model, const int n
 
         AUTOTIME;
         system("echo Begin inferring : $(date +%s%3N) >> /data/local/tmp/train_stamp.result");
-        for (int i = 0; i < warmUp + measureIterations + 1; i++) {
+        for (int i = 0; i < testIterations; i++) {
             if(i >= testIterations) { break; }
             auto data       = testDataLoader->next();
             auto example    = data[0];
@@ -175,14 +173,11 @@ void MobilenetV2BenchmarkUtils::train(std::shared_ptr<Module> model, const int n
                 std::cout << std::endl;
             }
             {
-                struct timeval Current;
-                gettimeofday(&Current, nullptr);
-                uint64_t mLastResetTime = Current.tv_sec * 1000000 + Current.tv_usec;
+                uint64_t mLastResetTime = MNN_TIME();
 
                 correct += accu->readMap<int32_t>()[0];
 
-                gettimeofday(&Current, nullptr);
-                auto lastTime = Current.tv_sec * 1000000 + Current.tv_usec;
+                auto lastTime = MNN_TIME();
                 auto durations = lastTime - mLastResetTime;
                 // MNN_PRINT("duration is %f ms \n", (float)durations / 1000.0f);
                 latency.push_back((float)durations / 1000.0f);
@@ -217,3 +212,4 @@ void MobilenetV2BenchmarkUtils::train(std::shared_ptr<Module> model, const int n
         exe->dumpProfile();
     
 }
+

@@ -149,6 +149,7 @@ std::vector<Express::VARP> GoogLenet::onForward(const std::vector<Express::VARP>
     x      = _AvePool(x, {7, 7}, {1, 1}, VALID);
     x      = conv3->forward(x);
     x      = _Softmax(x, -1);
+    x      = _Reshape(x, {0, -1});
     return {x};
 }
 

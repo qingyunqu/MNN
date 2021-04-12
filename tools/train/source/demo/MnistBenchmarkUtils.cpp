@@ -31,29 +31,34 @@ using namespace MNN;
 using namespace MNN::Express;
 using namespace MNN::Train;
 
+inline uint64_t MNN_TIME() {
+    struct timeval Current;
+    gettimeofday(&Current, nullptr);
+    uint64_t ret_time = Current.tv_sec * 1000000 + Current.tv_usec;
+    return ret_time;
+}
+
 void MnistBenchmarkUtils::train(std::shared_ptr<Module> model, std::string root, int BatchSize, std::string NetName) {
     {
-        // 更换模型之后如果还调用之前的.mnn则会报错，invalid net
         // Load snapshot
         auto para = Variable::load("mnist.snapshot.mnn");
         
         model->loadParameters(para);
-        
     }
     system("echo Begin testing : $(date +%s%3N) > /data/local/tmp/train_stamp.result");
     auto exe = Executor::getGlobalExecutor();
     BackendConfig config;
-    exe->setGlobalExecutorConfig(MNN_FORWARD_OPENCL, config, 4);
+    exe->setGlobalExecutorConfig(MNN_FORWARD_CPU, config, 4);
     std::shared_ptr<SGD> sgd(new SGD(model));
-    // FUNC_PRINT("happy");
     sgd->setMomentum(0.9f);
     // sgd->setMomentum2(0.99f);
     sgd->setWeightDecay(0.0005f);
 
+
+    // Lenet use inputsize of 28x28, Squeezenet/GoogLenet/Alexnet use 224x224
     auto dataset = NetName == "Lenet" ? MnistDataset::create(root, MnistDataset::Mode::TRAIN) : NormalDataset::create(root, NormalDataset::Mode::TRAIN);
     // the stack transform, stack [1, 28, 28] to [n, 1, 28, 28]
     const size_t batchSize  = BatchSize;
-    // MNN_PRINT("%s | %d | %s() : BatchSize %d \n", strrchr(__FILE__, '/')+1, __LINE__, __FUNCTION__, batchSize);
     const size_t numWorkers = 0;
     bool shuffle            = true;
     system("echo Load data : $(date +%s%3N) >> /data/local/tmp/train_stamp.result");
@@ -73,9 +78,9 @@ void MnistBenchmarkUtils::train(std::shared_ptr<Module> model, std::string root,
 
     // set measurement parameter
     int warmUp = 5;
-    int measureIterations = 128/BatchSize + 10;
+    int measureIterations = 20;
     // int loops = 1;
-    if(NetName == "Lenet") { measureIterations = 128/BatchSize + 200; } 
+    if (NetName == "Lenet") { measureIterations = 1024/BatchSize + 100; } 
     // if(NetName == "Lenet") { loops = 1; } // Lenet train too fast, loop it for more samples !!! loop will lose precision
 
     MNN_PRINT(" warmUp: %d \n measureIteration: %d \n", warmUp, measureIterations);
@@ -94,10 +99,6 @@ void MnistBenchmarkUtils::train(std::shared_ptr<Module> model, std::string root,
             int moveBatchSize = 0;
             system("echo Begin training : $(date +%s%3N) >> /data/local/tmp/train_stamp.result");
             for (int i = 0; i < warmUp + measureIterations +1; i++) {
-                // MNN_PRINT("i %d\n", i);
-            // for (int i = 0; i < iterations; i++) {
-                // AUTOTIME;
-                // if(i == iterations) { measureIterations = iterations - warmUp - 1; break; }
                 auto trainData  = dataLoader->next();
                 auto example    = trainData[0];
                 auto cast       = _Cast<float>(example.first[0]);
@@ -145,22 +146,13 @@ void MnistBenchmarkUtils::train(std::shared_ptr<Module> model, std::string root,
                     lastIndex = i;
                 }
                 {
-                struct timeval Current;
-                gettimeofday(&Current, nullptr);
-                uint64_t mLastResetTime = Current.tv_sec * 1000000 + Current.tv_usec;
-
-                    sgd->step(loss);                
-
-                gettimeofday(&Current, nullptr);
-                auto lastTime = Current.tv_sec * 1000000 + Current.tv_usec;
+                uint64_t mLastResetTime = MNN_TIME();
+                sgd->step(loss);                
+                uint64_t lastTime = MNN_TIME();
                 auto durations = lastTime - mLastResetTime;
-                
-                // MNN_PRINT("duration is %f ms \n", (float)durations / 1000.0f);
                 latency.push_back((float)durations / 1000.0f);
-                // MNN_PRINT("第%d个iteration的latency是：%f\n", i, latency.back());
                 }
             }
-            // 去掉前3个warmup，从第四个latency开始计算，算20个latency的均值
             float latency_count = 0;
             for (int i = warmUp; i < warmUp + measureIterations; i++){
                 latency_count += latency[i];
@@ -185,16 +177,15 @@ void MnistBenchmarkUtils::train(std::shared_ptr<Module> model, std::string root,
 
         latency.clear();
         // measureIterations = measureIterations/10;
-        measureIterations = testIterations - warmUp - 10;
+        // measureIterations = testIterations - warmUp - 10;
         int correct = 0;
         testDataLoader->reset();
         model->setIsTraining(false);
         int moveBatchSize = 0;
         system("echo Begin inferring : $(date +%s%3N) >> /data/local/tmp/train_stamp.result");
-        //skip infer for quick temper rise
-        // for (int i = 0; i < 0; i++) { 
-        for (int i = 0; i < warmUp + measureIterations +1; i++) {
-            // if(i >= testIterations) { break; }
+        // skip infer for quick temper rise
+        for (int i = 0; i < warmUp + measureIterations + 1; i++) {
+            if(i >= testIterations) { break; }
             auto data       = testDataLoader->next();
             auto example    = data[0];
             moveBatchSize += example.first[0]->getInfo()->dim[0];
@@ -208,19 +199,13 @@ void MnistBenchmarkUtils::train(std::shared_ptr<Module> model, std::string root,
             
             predict    = model->forward(example.first[0]);
             
-
             // opencl and inputSize=224 hasn't support ArgMax op yet
             // predict         = _ArgMax(predict, 1);
             // auto accu       = _Cast<int32_t>(_Equal(predict, _Cast<int32_t>(example.second[0]))).sum({});
             {   
-            struct timeval Current;
-            gettimeofday(&Current, nullptr);
-            uint64_t mLastResetTime = Current.tv_sec * 1000000 + Current.tv_usec;
-            
+            uint64_t mLastResetTime = MNN_TIME();
             correct += predict->readMap<int32_t>()[0];
-
-            gettimeofday(&Current, nullptr);
-            auto lastTime = Current.tv_sec * 1000000 + Current.tv_usec;
+            uint64_t lastTime = MNN_TIME();
             auto durations = lastTime - mLastResetTime;
             latency.push_back((float)durations / 1000.0f);
             }
@@ -233,8 +218,7 @@ void MnistBenchmarkUtils::train(std::shared_ptr<Module> model, std::string root,
         auto latency_avg = latency_count / float(measureIterations);
         MNN_PRINT("Inferring latency of %s is : %f ms (batchsize is %d)\n", NetName.c_str(), latency_avg, BatchSize);
        
-        auto accu = (float)correct / (float)testDataLoader->size();
-        std::cout << "epoch: " << epoch << "  accuracy: " << accu << std::endl;
         exe->dumpProfile();
     }
 }
+

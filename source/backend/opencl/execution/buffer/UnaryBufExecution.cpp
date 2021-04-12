@@ -144,9 +144,24 @@ public:
     }
 };
 
+class CastCreator : public OpenCLBackend::Creator {
+public:
+    virtual Execution* onCreate(const std::vector<Tensor*>& inputs, const std::vector<Tensor*>& outputs,
+                                 const MNN::Op* op, Backend* backend) const override {
+        auto cast = op->main_as_CastParam();
+        if (cast->dstT() == MNN::DataType_DT_FLOAT) {
+            return new UnaryBufExecution("convert_float4(in)", backend);
+        } else if (cast->dstT() == MNN::DataType_DT_INT32) {
+            return new UnaryBufExecution("convert_int4(in)", backend);
+        }
+        return nullptr;
+    }
+};
+
 OpenCLCreatorRegister<UnaryBufCreator> __UnaryBuf__(OpType_UnaryOp, BUFFER);
 OpenCLCreatorRegister<UnaryBufCreator> __SigmoidBuf__(OpType_Sigmoid, BUFFER);
 OpenCLCreatorRegister<UnaryBufCreator> __TanhBuf__(OpType_TanH, BUFFER);
+OpenCLCreatorRegister<CastCreator> __CastBuf__(OpType_Cast, BUFFER);
 } // namespace OpenCL
 } // namespace MNN
 #endif /* MNN_OPENCL_BUFFER_CLOSED */

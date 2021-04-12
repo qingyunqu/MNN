@@ -26,7 +26,7 @@ onehot(__read_only image2d_t indices, __read_only image2d_t depthPtr,
     } else if (i % 4 == 3) {
       index = indice.w;
     }
-    //printf("i: %d, %f\n", i, index);
+    // printf("i: %d, %f\n", i, index);
     for (int j = 0; j < (int)depth.x; j += 4) {
       float4 result;
       if (j < (int)depth.x) {
@@ -57,7 +57,7 @@ onehot(__read_only image2d_t indices, __read_only image2d_t depthPtr,
           result.w = offValue.x;
         }
       }
-      write_imagef(outputPtr, (int2)(j/4, i), result);
+      write_imagef(outputPtr, (int2)(j / 4, i), result);
     }
   }
-}
+} 
