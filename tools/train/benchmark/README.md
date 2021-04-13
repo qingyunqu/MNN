@@ -154,7 +154,7 @@ chmod 0777 usage_monitor_unroot.sh
 ## Roadmap
 In the future, we will add more models for wider measurement. More devices will be measured to find those system parameters influencing on-device training performance and help related scholars choose optimal configuration.
 
-Besides, while being the stateof-the-art training library for edge devices, our experiments show that MNN’s performance is still far from
+Besides, while being the state-of-the-art training library for edge devices, our experiments show that MNN’s performance is still far from
 optima. So we will focus on generating more efficient operators and doing memory optimizations as well.
 
 ## Related work
