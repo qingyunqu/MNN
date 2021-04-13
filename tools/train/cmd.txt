@@ -1,1 +1,0 @@
-su; /data/local/tmp/usage_monitor.sh /data/local/tmp/usage_monitor.result 100000

@@ -1,17 +1,21 @@
 set -e
 ABI="arm64-v8a"
-OPENCL="ON"
-RUN_LOOP=10
-FORWARD_TYPE=0
-Para_Num=$#
-PUSH_MODEL=${@: -1}
-Para=$@
+OPENCL="OFF"
+
+if [ "$#" -ne 2 ]; then
+    echo "usage: ./bench_unroot.sh ModelName Core Push_model(0/1)"
+    exit
+fi
+
 ModelName=$1
+echo Testing $ModelName
+PUSH_MODEL=$2
+BatchSize=(1 2 4 8 16)
+echo BatchSize: ${BatchSize[*]}
 OUT_FILE=train_bench
-DEVICE=SamsungS8p_OPENCL
+DEVICE=XIAOMI # do not change it here! change it in get_data*.sh
+echo Test device is $DEVICE 
 
-
-WORK_DIR=`pwd`
 BUILD_DIR=build
 ANDROID_DIR=/data/local/tmp
 
@@ -21,8 +25,6 @@ function bench_session() {
     adb shell "mv $ANDROID_DIR/temp* $ANDROID_DIR/models"
     adb shell "cat /proc/cpuinfo > $ANDROID_DIR/bench_session.result"
     adb shell "echo "
-    # echo "su; LD_LIBRARY_PATH=\$ANDROID_DIR; \$ANDROID_DIR/build/benchmark.out \$ANDROID_DIR/models/ 10 3 0 > \$ANDROID_DIR/bench_session.result" > ../cmd.txt # adb shell中连续执行多条指令的办法
-    # adb shell < ../cmd.txt 
     adb shell "LD_LIBRARY_PATH=$ANDROID_DIR $ANDROID_DIR/build/benchmark.out $ANDROID_DIR/models/ 10 3 0 >> $ANDROID_DIR/bench_session.result"
     adb pull $ANDROID_DIR/bench_session.result ../$DEVICE/
 }
@@ -51,67 +53,45 @@ function build_android_bench() {
 }
 
 function bench_android() {
-    # start_monitor &
-    # sleep 5
     build_android_bench
     find . -name "*.so" | while read solib; do
         adb push $solib  $ANDROID_DIR
     done
     
-    if [ $PUSH_MODEL == "-p" ]; then
+    if [ $PUSH_MODEL -eq 1 ]; then
     echo Pushing models
     adb push ../build $ANDROID_DIR
     fi
 
     adb shell chmod 0777 $ANDROID_DIR/build/runTrainDemo.out
-    
-    # adb shell "cat /proc/cpuinfo > $ANDROID_DIR/$OUT_FILE.result"
+    adb shell "cat /proc/cpuinfo > $ANDROID_DIR/$OUT_FILE.result"
     adb shell "echo "
-    adb shell "loc=`pwd` echo $loc >> $ANDROID_DIR/$OUT_FILE.result" # 这里到底如何把安卓的pwd给写入到指定文件里呢
     adb shell "echo Build Flags: ABI=$ABI  OpenCL=$OPENCL >> $ANDROID_DIR/$OUT_FILE.result"
     
-    for parameter in ${Para}
+    for batchsize in ${BatchSize[*]}
     do
-        
-        # when push model, ignore the last para
-        if [ $parameter == "-p" ];then
-        continue
+        echo "Testing $ModelName with BatchSize $batchsize"
+
+        # benchmark  Alexnet/Lenet/Squeezenet/GoogLenet
+        if [ $ModelName != Mobilenet ]; then
+        adb shell "LD_LIBRARY_PATH=$ANDROID_DIR $ANDROID_DIR/build/runTrainDemo.out MnistBenchmark $ANDROID_DIR/mnist_data $batchsize $ModelName 2>$ANDROID_DIR/benchmark.err >> $ANDROID_DIR/$OUT_FILE.result"
+        echo end
         fi
 
-        if [ $parameter == $ModelName ]; then
-            echo "Choose $parameter"
-
-            else
-            echo "Testing $ModelName with BatchSize $parameter"
-
-            # 如何进入到build文件夹执行runTrainDemo.out
-
-            # benchmark  Alexnet or Lenet
-            if [ $ModelName != Mobilenet ]; then
-            adb shell "LD_LIBRARY_PATH=$ANDROID_DIR $ANDROID_DIR/build/runTrainDemo.out MnistBenchmark $ANDROID_DIR/mnist_data $parameter $ModelName 2>$ANDROID_DIR/benchmark.err >> $ANDROID_DIR/$OUT_FILE.result"
-            echo end
-            fi
-
-            # benchmark  MnistTrain
-            if [ $ModelName == Mobilenet ]; then
-            # echo "LD_LIBRARY_PATH=$ANDROID_DIR $ANDROID_DIR/build/runTrainDemo.out MobilenetV2Train $ANDROID_DIR/mobilenet_demo/train_dataset/train_images/ $ANDROID_DIR/mobilenet_demo/train_dataset/train.txt $ANDROID_DIR/mobilenet_demo/test_dataset/test_images/ $ANDROID_DIR/mobilenet_demo/test_dataset/test.txt $BatchSize 2>$ANDROID_DIR/benchmark.err >> $ANDROID_DIR/$OUT_FILE"
-            adb shell "LD_LIBRARY_PATH=$ANDROID_DIR $ANDROID_DIR/build/runTrainDemo.out MobilenetV2Benchmark $ANDROID_DIR/mobilenet_demo/train_dataset/train_images/ $ANDROID_DIR/mobilenet_demo/train_dataset/train.txt $ANDROID_DIR/mobilenet_demo/test_dataset/test_images/ $ANDROID_DIR/mobilenet_demo/test_dataset/test.txt $parameter 2>$ANDROID_DIR/benchmark.err >> $ANDROID_DIR/$OUT_FILE.result"
-            echo end
-            fi
-
-            # adb pull $ANDROID_DIR/train_stamp.result ../
-            # mv -f ../train_stamp.result ../$DEVICE/train_stamp/$ModelName/train_stamp_$parameter.result
+        # benchmark  MnistTrain
+        if [ $ModelName == Mobilenet ]; then
+        adb shell "LD_LIBRARY_PATH=$ANDROID_DIR $ANDROID_DIR/build/runTrainDemo.out MobilenetV2Benchmark $ANDROID_DIR/mobilenet_demo/train_dataset/train_images/ $ANDROID_DIR/mobilenet_demo/train_dataset/train.txt $ANDROID_DIR/mobilenet_demo/test_dataset/test_images/ $ANDROID_DIR/mobilenet_demo/test_dataset/test.txt $batchsize 2>$ANDROID_DIR/benchmark.err >> $ANDROID_DIR/$OUT_FILE.result"
+        echo end
         fi
+
+        adb pull $ANDROID_DIR/train_stamp.result ../
+        mv -f ../train_stamp.result ../$DEVICE/train_stamp/$ModelName/train_stamp_${batchsize}.result
     done
 
-    #bench_session
+    echo start bench_session
+    bench_session
 
-    # adb pull $ANDROID_DIR/$OUT_FILE.result ../$DEVICE/train_bench/${OUT_FILE}_${ModelName}.result
-    # adb pull $ANDROID_DIR/usage_monitor.result ../$DEVICE/usage_monitor/usage_monitor_${ModelName}.result
-
-    # adb pull $ANDROID_DIR/usage_monitor.sh 
-    # sleep 40
-    # end_monitor
+    adb pull $ANDROID_DIR/$OUT_FILE.result ../$DEVICE/train_bench/${OUT_FILE}_${ModelName}.result
 }
 
 

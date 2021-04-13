@@ -7,6 +7,8 @@ fi
 outFile=$1
 intvl=$2
 
+echo Monitoring device frequency and battery temperature...
+
 echo "------------Frequency Stats-------------" > $outFile
 
 while true
@@ -24,5 +26,5 @@ do
     echo "cpu7" $(cat /sys/devices/system/cpu/cpu7/cpufreq/scaling_cur_freq) >> $outFile
     echo "\nEND" >> $outFile
     
-	usleep $intvl
+	sleep $intvl
 done

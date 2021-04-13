@@ -7,21 +7,19 @@ import numpy as np
 np.__version__
 
 # %%
-# # set parameters
-# para_num = len(sys.argv) # para_num check
-# if para_num != 2:
-#     print("usage: ./dataprocess.py DeviceName NetName")
-#     sys.exit(0)
+# set parameters
+para_num = len(sys.argv) # para_num check
+if para_num != 3:
+    print("usage: python dataprocess.py DeviceName NetName")
+    sys.exit(0)
 
 DeviceName = sys.argv[1]
-NetNamenum = sys.argv[2]
+NetName = sys.argv[2]
 
 print(DeviceName)
+print(NetName)
 
-# NetNamenum = 4
-NetName = NetNamenum 
-
-BatchSize = [1, 2, 4, 8, 16, 32]
+BatchSize = [1, 2, 4, 8, 16]
 print(BatchSize)
 
 path_to_usage_monitor = "./" + DeviceName + "/usage_monitor/usage_monitor_" + NetName + ".result"
@@ -38,7 +36,7 @@ path_to_performance = "./" + DeviceName + "/processed_data/" + NetName + "/perfo
 # load raw data and extract their attributes into csv file
 raw_data = pd.read_table(path_to_usage_monitor, header=None, sep=",", engine='python')
 
-attributes= ["stamp", "processPid", "VIRT", "RES", "SHR", "cpuUsage",              "battery_current", "battery_voltage", "usb_current", "usb_voltage" ]
+attributes= ["stamp", "processPid", "VIRT", "RES", "SHR", "cpuUsage", "battery_current", "battery_voltage", "usb_current", "usb_voltage" ]
 processed_data = pd.DataFrame(index=attributes)
 
 data = pd.Series(["nan"]*10, attributes)
@@ -118,7 +116,7 @@ matrix.to_csv(path_to_time_table)
 # %%
 # read data from processed_data and analyse it with time_stamp
 processed_data = pd.read_table(path_to_processed_data, header=0, index_col=0, sep=",")
-attributes= ["batchsize", "VIRT", "RES", "SHR", "cpuUsage_train", "cpuUsage_infer",             "battery_current", "battery_voltage", "usb_current", "usb_voltage" ]
+attributes= ["batchsize", "VIRT", "RES", "SHR", "cpuUsage_train", "cpuUsage_infer", "battery_current", "battery_voltage", "usb_current", "usb_voltage" ]
 performance = pd.DataFrame(index=attributes)
 perform_temp = pd.Series([0]*10, attributes) # 初始化性能值存储条
 
@@ -167,72 +165,15 @@ for batchsize in BatchSize:
             if str(processed_data.loc[indexs]["VIRT"]) == "nan": 
                 continue
             count = count + 1 
-            #perform_temp["cpuUsage_infer"] = perform_temp["cpuUsage_infer"] + processed_data.loc[indexs]["cpuUsage"]
+            perform_temp["cpuUsage_infer"] = perform_temp["cpuUsage_infer"] + processed_data.loc[indexs]["cpuUsage"]
             perform_temp["VIRT"] = max (float(processed_data.loc[indexs]["VIRT"].split("M")[0]), perform_temp["VIRT"])
             perform_temp["RES"] = max (float(processed_data.loc[indexs]["RES"].split("M")[0]), perform_temp["RES"])
             
-            #perform_temp["SHR"] = max (float(processed_data.loc[indexs]["SHR"].split("M")[0]), perform_temp["SHR"])
-            #perform_temp["battery_current"] = max (int(processed_data.loc[indexs]["battery_current"]), perform_temp["battery_current"])
-            #perform_temp["battery_voltage"] = max (int(processed_data.loc[indexs]["battery_voltage"]), perform_temp["battery_voltage"])
-            #perform_temp["usb_current"] = max (int(processed_data.loc[indexs]["usb_current"]), perform_temp["usb_current"])
-            #perform_temp["usb_voltage"] = max (int(processed_data.loc[indexs]["usb_voltage"]), perform_temp["usb_voltage"])
-    #perform_temp["cpuUsage_infer"] = perform_temp["cpuUsage_infer"]/count
+    perform_temp["cpuUsage_infer"] = perform_temp["cpuUsage_infer"]/count
     
     performance[num] = perform_temp
     perform_temp[:] = 0
 
-    matrix = performance.T
-    matrix.to_csv(path_to_performance)
-
-
-# %%
-matrix
-
-
-# %%
-data = pd.read_table(path_to_processed_data, header=0, index_col=0, sep=",")
-data.loc[1]["stamp"]
-
-
-# %%
-# # load raw data and extract their attributes into csv file
-# raw_data = pd.read_table(path_to_freq, header=None, sep=",", engine='python')
-
-# attributes= ["stamp", "temperature", "cpu0", "cpu1", "cpu2", "cpu3", "cpu4", "cpu5", "cpu6", "cpu7"]
-# processed_data = pd.DataFrame(index=attributes)
-
-# data = pd.Series(["nan"]*10, attributes)
-
-# start_time = int(raw_data[0][1].split()[2])
-
-# count = 0
-# for line in raw_data[0]:
-#     if "NEW DATA" in line:
-#         count = count + 1
-#         data["stamp"] = int(line.split()[2]) - start_time
-#     if "temperature" in line:
-#         temp_loc = line.split(" ").index("temperature:")
-#         #data["temperature"] = 1
-#         data["temperature"] = line.split(" ")[temp_loc + 1]
-#     for attribute in attributes[2:]: 
-#         if attribute in line:
-#             data[attribute] = line.split()[1]
-#     if "END" in line:
-#         processed_data[count] = data
-#         data[:] = "nan"
-
-# matrix = processed_data.T
-
-# matrix.to_csv("./freq_data_redmi_new.csv")
-
-    
-
-
-# %%
-
-
-
-# %%
-
-
+matrix = performance.T
+matrix.to_csv(path_to_performance)
 
