@@ -22,7 +22,7 @@
 
 ## Background
 Deep learning technique is revolutionizing how edge
-devices interact with users or the world, including smartphones and IoT devices. Fueled by the increasingly
+devices interact with users or the world, including smartphones and IoT devices. Fueled by the increasingly
 powerful on-chip processors, the inference (or prediction) stage of deep learning is known to happen on edge devices without cloud offloading, making a case for low delay and data privacy protection. Beyond inference, the training stage of deep learning is still commonly placed on data centers for its tremendous demand of massive training data and computing resources.
 
 In 2020, alibaba proposed a highly efficient and lightweight deep learning framework: [MNN](https://github.com/alibaba/MNN), which supports inference and training of deep learning models, and has industry leading performance for inference and training on-device. So we develop the first benchmark suite for on-device training based on MNN.
