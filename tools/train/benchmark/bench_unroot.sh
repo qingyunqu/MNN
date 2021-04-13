@@ -13,7 +13,7 @@ PUSH_MODEL=$2
 BatchSize=(1 2 4 8 16)
 echo BatchSize: ${BatchSize[*]}
 OUT_FILE=train_bench
-DEVICE=XIAOMI # do not change it here! change it in get_data*.sh
+DEVICE=YOUR_DEVICE_NAME # do not change it here! change it in get_data*.sh
 echo Test device is $DEVICE 
 
 BUILD_DIR=build

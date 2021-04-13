@@ -1,59 +1,167 @@
+# First benchmark suite for on-device training
 
-# auto time measurement shell使用说明
+> Version 1.0
+## Table of Contents
 
-`脚本功能`：测试不同batchsize、不同模型，单个batch的train和infer的时间
+- [Background](#background)
+- [Overview](#overview)
+- [Suite Composition](#suite-composition)
+  - [NN models](#nn-models)
+  - [GPU Training](#gpu-training)
+  - [Latency Test](#latency-test)
+  - [CPU Configuration](#cpu-configuration)
+  - [Thermal Dynamics](#thermal-dynamics)
+- [Step-by-step Instructions](#step-by-step-instructions)
+  - [root](#root-instruction)
+  - [unroot](#unroot-instruction)
+- [Example](#example)
+- [Roadmap](#roadmap)
+- [Related Work](#related-work)
+- [Contributors](#contributors)
 
-对应的`脚本文件`是 `./bench_batchsize_android.sh`
 
-运行之前，需要先把两个数据集放到/data/local/tmp目录下
+## Background
+Deep learning technique is revolutionizing how edge
+devices interact with users or the world, including smartphones and IoT devices. Fueled by the increasingly
+powerful on-chip processors, the inference (or prediction) stage of deep learning is known to happen on edge devices without cloud offloading, making a case for low delay and data privacy protection. Beyond inference, the training stage of deep learning is still commonly placed on data centers for its tremendous demand of massive training data and computing resources.
 
-运行脚本会在本文件夹下生成 benchmark_batchsize.txt
+In 2020, alibaba proposed a highly efficient and lightweight deep learning framework: [MNN](https://github.com/alibaba/MNN), which supports inference and training of deep learning models, and has industry leading performance for inference and training on-device. So we develop the first benchmark suite for on-device training based on MNN.
 
-文件内容包含了移动端CPU基本信息、运行报错和时间统计
+## Overview
+Our benchmark suite includes 5 classical NN models, and
+can bench CPU/GPU training performance metrics including training latency, energy consumption, memory footprint, hardware utilization, and thermal dynamics. The suite can run on both root and unroot devices.
+
+## Suite Composition
+
+### NN models
+Besides from the two NN models that MNN has supported, we add three more models (implemented in [models](../source/models)). Five classical CNN models are tested in our experiments:  LeNet (2 convs, 3.2K parameters), AlexNet (5
+convs, 61M parameters), MobileNetv2 (53 convs, 3.4M
+parameters), SqueezeNet (18 convs, 411.2K parameters),
+and GoogLeNet (22 convs, 6.8M parameters).
+
+### GPU Training
+We add essential operations for GPU training using OPENCL and enable preliminary measurement, which means the latency and memory you get are only suggested for reference.
+
+### Latency Test
+Our suite can help you test the training/inference latency with different models in a simple way, just need to run [get_data_root.sh](./get_data_root.sh)/[get_data_unroot.sh](./get_data_unroot.sh) refer to [instructions](#step-by-step-instructions).
+
+### CPU Configuration
+_Because unroot devices have no root for changing cpu configuration, so those function are only available for root devices_
+
+With different parameters for [get_data_root.sh](./get_data_root.sh), you can change numbers of CPU cores used for training or even specify which core you want to use.
+
+Besides from numbers of CPU, frequency is a important factor affecting training performance as well. So we developed [get_data_root_freq.sh](./get_data_root_freq.sh) to help you quickly test the difference of training performance under different frequencies.
+### Thermal Dynamics
+To reach a usable accuracy, the training phase often takes a substantial period of time which may lead to thermal issues and therefore the CPU frequency. So we provide the [freq_temperature monitor](./freq_temperature.sh) for you to know your training device better.
+
+## Step-by-step Instructions
+
+First of all, you need to configure the MNN environment, which can refer to [MNN Instruction](https://www.yuque.com/mnn/cn/build_android).
+
+Whether your device is root or not, you need to push the related dataset to your device before testing. And put the downloaded datasets in the same directory (Dataset can be downloaded from ??).
 
 ```
-运行示例：
-
-./bench_batchsize_android.sh Alexnet 1 2 4 8 -p
-
-其中
-第一个参数:模型的名称（可选有 Mobilenet、Alexnet、Lenet、Squeezenet、GoogLenet)
-第二个参数：batchsize（可填参数的个数 1到n个）
-最后一个参数：可选，加-p表示将build文件push到手机上，在修改过本地文件后需要加此参数
+./data_prepare.sh /path/to/data/root
 ```
 
-## 如果想调整backend，需要修改的地方有
+Next, choose the instructions you need to follow according to the different permissions of your device.
+### root
+Root device can measure the latency of the model, the influence of different CPU configuration, and the relationship between frequency and temperature.
 
-./benchmark_batchsize_android.sh   `line 3`
-
-*Utils.cpp  `exe->setGlobalExecutorConfig(MNN_FORWARD_OPENCL, config, 4);"`
-
----
-
-## 新增功能  (2021.3.15)
-
-记录训练/推断过程中各个节点的时间戳
-
-功能已嵌入，直接运行`bench_batchsize_android.sh`即可，运行结束会在`train_stamp`文件夹下得到时间戳文档`train_stamp_*.result`  （*代表batchsize）
-
----
-
-## 最新版本（2021.3.21）
-
-运行方式不变
-
-对`bench_batchsize_android.sh`进行了优化，每次运行生成的文件会保存在特定的文件夹下（根据设备名、文件类型区分）
-
+1. Latency
 ```
-例：测试设备为samsungS8p，测试网络模型为Lenet，测试BatchSize为1、2、4、8、16、32、64、128、256
+./bench_root.sh ModelName Core Push_model(0/1)
+```
+2. CPU configuration
+```
+# numbers of CPU
+# Core should be presented in hexadecimal form, .e.g, ff.
+./get_data_root.sh numCore Core Device 
 
-运行脚本会在本地生成samsungS8p文件夹，文件夹下有processed_data、train_bench、train_stamp、usage_monitor四个子文件夹，其中：
+# frequency of CPU
+./get_data_root_freq.sh Device
+```
+[get_data_root_freq.sh](./get_data_root_freq.sh) will measure all available frequencies in default. 
 
-processed_data: 存放经过python处理过的网络模型数据
-train_bench: 存放网络模型训练和推断过程中的log（包含各过程的时间统计）
-train_stamp: 存放各网络模型训练和推断过程中的时间戳
-usage_monitor: 训练和推断过程中移动设备的各项性能记录
+Device_Core_${Core} / Device_Freq_${Freq} will be generated in the current directory.
 
-此外，还会生成一个bench_session.result，其中存放了
+
+3. Freq-Temperature
+```
+adb push ./frequency_monitor.sh /data/local/tmp
+adb shell
+cd /data/local/tmp
+chmod 0777 /data/local/tmp/frequency_monitor.sh
+/data/local/tmp/frequency_monitor.sh freq_temperature.result 1
+
+# When you think your device is hot enough for frequency down to occur, use ctrl-c in the adb shell, and then run the following code:
+
+python temperature.py
+```
+batchsize_energy_Device、singleBatch_energy_Device、singleSample_energy_Device willbe generated in the current directory
+
+***TIPS: When you interrupt the measurement ahead of time or the measurement fails, you need to run [clean.sh](./clean.sh) to clear the garbage cache of the last measurement.**
+
+### unroot
+```
+adb push usage_monitor_unroot.sh /data/local/tmp
+adb shell 
+cd data/local/tmp
+chmod 0777 usage_monitor_unroot.sh
+./usage_monitor_unroot.sh usage_monitor.result 1
+
+# Open a new terminal
+
+./get_data_unroot.sh Device
 ```
 
+## Example
+> Device: Meizu 16T (root); numCore: 4 (**f0** i.e. **11110000** i.e. **cpu4、5、6、7**); Frequency: 1.7GHz
+```markdown
+./data_prepare.sh ~/Desktop/data
+
+./get_data_root.sh 4 f0 MEIZU
+# Generate MEIZU_Core_f0/
+
+./get_data_root_freq.sh MEIZU
+# Cut down when finish measuring freq 1.7GHz, so only generate MEIZU_Freq_1708800/
+
+adb push ./frequency_monitor.sh /data/local/tmp
+adb shell
+cd /data/local/tmp
+chmod 0777 /data/local/tmp/frequency_monitor.sh
+/data/local/tmp/frequency_monitor.sh freq_temperature.result 1
+
+# Run for a while, and open a new terminal to run below
+python temperature.py
+# Generate batchsize_energy_MEIZU_Freq_1708800.csv singleBatch_energy_MEIZU_Freq_1708800.csv singleSample_energy_MEIZU_Freq_1708800.csv
+```
+
+>Device: Xiaomi MI 9 (unroot)
+
+```markdown
+adb push usage_monitor_unroot.sh /data/local/tmp
+adb shell 
+cd data/local/tmp
+chmod 0777 usage_monitor_unroot.sh
+./usage_monitor_unroot.sh usage_monitor.result 1
+
+# Open a new terminal
+./get_data_unroot.sh Device
+# Generate XIAOMI/
+# Turn back to the old terminal and ctrl-c to stop usage_monitor
+```
+## Roadmap
+In the future, we will add more models for wider measurement. More devices will be measured to find those system parameters influencing on-device training performance and help related scholars choose optimal configuration.
+
+Besides, while being the stateof-the-art training library for edge devices, our experiments show that MNN’s performance is still far from
+optima. So we will focus on generating more efficient operators and doing memory optimizations as well.
+
+## Related work
+[MNN](https://github.com/alibaba/MNN)
+
+## Contributor
+[@caidongqi](https://github.com/caidongqi)
+[@xumengwei](https://github.com/xumengwei)
+[@wangqipeng](https://github.com/qipengwang)
+[@liuyuanqiang](https://github.com/qingyunqu)
