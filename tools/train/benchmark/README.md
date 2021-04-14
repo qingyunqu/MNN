@@ -25,7 +25,7 @@ Deep learning technique is revolutionizing how edge
 devices interact with users or the world, including smartphones and IoT devices. Fueled by the increasingly
 powerful on-chip processors, the inference (or prediction) stage of deep learning is known to happen on edge devices without cloud offloading, making a case for low delay and data privacy protection. Beyond inference, the training stage of deep learning is still commonly placed on data centers for its tremendous demand of massive training data and computing resources.
 
-In 2020, alibaba proposed a highly efficient and lightweight deep learning framework: [MNN](https://github.com/alibaba/MNN), which supports inference and training of deep learning models, and has industry leading performance for inference and training on-device. So we develop the first benchmark suite for on-device training based on MNN.
+In 2019, alibaba proposed a highly efficient and lightweight deep learning framework: [MNN](https://github.com/alibaba/MNN), which supports inference and training of deep learning models, and has industry leading performance for inference and training on-device. So we develop the first benchmark suite for on-device training based on MNN.
 
 ## Overview
 Our benchmark suite includes 5 classical NN models, and
@@ -58,7 +58,7 @@ To reach a usable accuracy, the training phase often takes a substantial period 
 
 First of all, you need to configure the MNN environment, which can refer to [MNN Instruction](https://www.yuque.com/mnn/cn/build_android).
 
-Whether your device is root or not, you need to push the related dataset to your device before testing. And put the downloaded datasets in the same directory (Dataset can be downloaded from ??).
+Whether your device is root or not, you need to push the related dataset to your device before testing. And put the downloaded datasets in the same directory (Dataset can be downloaded from [Google Drive](https://drive.google.com/drive/folders/1IB1-NJgzHSEb7ucgJzM2Gj8QzxpYAjGy?usp=sharing)).
 
 ```
 ./data_prepare.sh /path/to/data/root
