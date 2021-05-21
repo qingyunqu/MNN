@@ -12,8 +12,12 @@
 #include <MNN/Tensor.hpp>
 #include <MNN/Interpreter.hpp>
 #include <vector>
+#include <algorithm>
 #include <mutex>
 #include <set>
+#include <queue>
+#include <iostream>
+#include <fstream>
 #include <MNN/MNNForwardType.h>
 namespace MNN {
 class Backend;
@@ -56,6 +60,8 @@ public:
     void addOpFlops(const std::string& type, float flops);
     class Profiler;
     static RuntimeInfo getRuntime();
+
+    void profileCacheExecution(std::shared_ptr<ComputeCache> cache);
 private:
     void _makeCache(const std::vector<EXPRP>& outputs, bool forceCPU);
     void _create(const std::vector<EXPRP>& outputs, std::set<std::shared_ptr<Executor::ComputeCache>>&& inputCaches, std::set<std::shared_ptr<Expr::Inside>>&& inputNode, bool forceCPU);

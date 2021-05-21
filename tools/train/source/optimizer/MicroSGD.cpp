@@ -41,13 +41,17 @@ bool MicroSGD::step(Express::VARP loss) {
     } else {
         // current batch is not the first micro-batch
         // add grad to buffer
-        printf("current batch is not the first micro-batch, add grad to buffer\n");
-        for(auto& iter: res) {
-            auto newVarp = mGradBuffer[iter.first] + iter.second;
-            auto ptr = newVarp->readMap<float>();
-            auto info = newVarp->getInfo();
-            mGradBuffer[iter.first] = _Const(ptr, info->dim, info->order, info->type);;
+        {
+            AUTOTIME;
+            printf("current batch is not the first micro-batch, add grad to buffer\n");
+            for(auto& iter: res) {
+                auto newVarp = mGradBuffer[iter.first] + iter.second;
+                auto ptr = newVarp->readMap<float>();
+                auto info = newVarp->getInfo();
+                mGradBuffer[iter.first] = _Const(ptr, info->dim, info->order, info->type);;
+            }
         }
+
         if (mMicroStep % (mBatchSize / mMicroBatchSize) == 0) {
             //end current batch, update params by using gradBuffer
             printf("end current batch, update params by using gradBuffer\n");

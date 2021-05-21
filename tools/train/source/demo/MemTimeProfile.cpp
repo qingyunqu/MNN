@@ -17,6 +17,7 @@
 #include "Lenet.hpp"
 #include "MnistUtils.hpp"
 #include "MobilenetV2Utils.hpp"
+#include "MemTimeProfileUtils.cpp"
 #include <MNN/expr/NN.hpp>
 #define MNN_OPEN_TIME_TRACE
 #include <MNN/AutoTime.hpp>
@@ -63,7 +64,7 @@ public:
                 } else if (modelname == "Googlenet") {
                     model = std::make_shared<GoogLenet>();
                 }
-                MobilenetV2Utils::train(model, numClass, 1, trainImagesFolder, trainImagesTxt, testImagesFolder, testImagesTxt, batchsize, microBatchsize);
+                MemTimeProfileUtils::train(model, numClass, 1, trainImagesFolder, trainImagesTxt, testImagesFolder, testImagesTxt, batchsize, microBatchsize);
                 return 0;
             }
         }

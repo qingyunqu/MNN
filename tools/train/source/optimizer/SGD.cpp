@@ -82,14 +82,31 @@ std::map<Express::VARP, Express::VARP> SGD::onGetNextParameter(Express::VARP los
     printf("finish compute grad graph\n");
     auto parameters = module()->parameters();
     std::vector<VARP> prepareCompute;
-    for (auto iter : parameters) {
-        if (iter->expr().first->get() != nullptr) {
-            prepareCompute.emplace_back(iter);
+    auto execOrder = Variable::getExecuteOrder({loss});
+    std::map<EXPRP, VARP> paramExpr;
+    for(auto param: parameters){
+        paramExpr.insert(std::make_pair(param->expr().first, param));
+    }
+    int insertPos = 0;
+    for(auto expr: execOrder) {
+        if (paramExpr.find(expr)!=paramExpr.end()) {
+            if (expr->get() != nullptr) {
+                prepareCompute.insert(prepareCompute.begin()+insertPos, paramExpr[expr]);
+                insertPos++;
+            } else {
+                prepareCompute.insert(prepareCompute.begin()+insertPos, grad[paramExpr[expr]]);
+            }
         }
     }
-    for (auto& iter : grad) {
-        prepareCompute.emplace_back(iter.second);
-    }
+//    for (auto iter : parameters) {
+//        if (iter->expr().first->get() != nullptr) {
+//            prepareCompute.emplace_back(iter);
+//        }
+//    }
+//    for (auto& iter : grad) {
+//        prepareCompute.emplace_back(iter.second);
+//    }
+    printf("prepareCompute.size() = %d\ttrainable.size() = %d\n", prepareCompute.size(), trainable().size());
     printf("begin prepare compute\n");
     Variable::prepareCompute(prepareCompute);
     printf("finish prepare compute & start read-map\n");
@@ -122,6 +139,42 @@ std::map<Express::VARP, Express::VARP> SGD::onGetNextParameter(Express::VARP los
     }
     printf("finish func %s\n", __FUNCTION__ );
     return grad;
+}
+
+void SGD::profile(Express::VARP loss) {
+    printf("call %s\n", __FUNCTION__ );
+    auto grad = OpGrad::grad(loss, trainable(), mGradBlockExprName);
+    printf("finish opgrad in %s\n", __FUNCTION__ );
+    auto parameters = module()->parameters();
+    std::vector<VARP> prepareCompute;
+    auto execOrder = Variable::getExecuteOrder({loss});
+    std::map<EXPRP, VARP> paramExpr;
+    for(auto param: parameters){
+        paramExpr.insert(std::make_pair(param->expr().first, param));
+    }
+    int insertPos = 0;
+    for(auto expr: execOrder) {
+        if (paramExpr.find(expr)!=paramExpr.end()) {
+            if (expr->get() != nullptr) {
+                prepareCompute.insert(prepareCompute.begin()+insertPos, paramExpr[expr]);
+                insertPos++;
+            } else {
+                prepareCompute.insert(prepareCompute.begin()+insertPos, grad[paramExpr[expr]]);
+            }
+        }
+    }
+//    for (auto iter : parameters) {
+//        if (iter->expr().first->get() != nullptr) {
+//            prepareCompute.emplace_back(iter);
+//        }
+//    }
+//    for (auto& iter : grad) {
+//        prepareCompute.emplace_back(iter.second);
+//    }
+    Variable::prepareCompute(prepareCompute);
+    printf("finish prepareCompute in %s\n", __FUNCTION__ );
+    Variable::profileExecute(prepareCompute[0]);
+//    Variable::clearCache(prepareCompute);
 }
 
 } // namespace Train

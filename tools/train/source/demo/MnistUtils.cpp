@@ -43,7 +43,7 @@ void MnistUtils::train(std::shared_ptr<Module> model, std::string root, int batc
         trainBatchsize = batchsize;
         trainMicroBatchsize = microBatchsize;
     } else {
-        trainBatchsize = trainMicroBatchsize = 8;
+        trainBatchsize = trainMicroBatchsize = 64;
     }
 //    std::shared_ptr<SGD> sgd(new SGD(model));
     std::shared_ptr<MicroSGD> sgd(new MicroSGD(model, trainBatchsize, trainMicroBatchsize));
@@ -81,7 +81,7 @@ void MnistUtils::train(std::shared_ptr<Module> model, std::string root, int batc
             Timer _100Time;
             int lastIndex = 0;
             int moveBatchSize = 0;
-            for (int i = 0; i < 25 * trainBatchsize / trainMicroBatchsize; i++) {
+            for (int i = 0; i < iterations; i++) {
                 AUTOTIME;
                 MNN_MEMORY_PROFILE("begin an iteration")
                 auto trainData  = dataLoader->next();
@@ -124,7 +124,7 @@ void MnistUtils::train(std::shared_ptr<Module> model, std::string root, int batc
 #endif
                 float rate   = LrScheduler::inv(0.01, epoch * iterations + i, 0.0001, 0.75);
                 sgd->setLearningRate(rate);
-                /*if (moveBatchSize % (10 * batchSize) == 0 || i == iterations - 1) {
+                if (moveBatchSize % (10 * trainMicroBatchsize) == 0 || i == iterations - 1) {
                     std::cout << "epoch: " << (epoch);
                     std::cout << "  " << moveBatchSize << " / " << dataLoader->size();
                     std::cout << " loss: " << loss->readMap<float>()[0];
@@ -133,7 +133,7 @@ void MnistUtils::train(std::shared_ptr<Module> model, std::string root, int batc
                     std::cout.flush();
                     _100Time.reset();
                     lastIndex = i;
-                }*/
+                }
                 sgd->step(loss);
 //                return;
             }

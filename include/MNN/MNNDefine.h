@@ -33,8 +33,8 @@
 #define MNN_ERROR(format, ...) __android_log_print(ANDROID_LOG_ERROR, "MNNJNI", format, ##__VA_ARGS__)
 #define MNN_PRINT(format, ...) __android_log_print(ANDROID_LOG_INFO, "MNNJNI", format, ##__VA_ARGS__)
 #else
-#define MNN_PRINT(format, ...) printf(format, ##__VA_ARGS__)
-#define MNN_ERROR(format, ...) printf(format, ##__VA_ARGS__)
+#define MNN_PRINT(format, ...) {printf(format, ##__VA_ARGS__);fflush(stdout);}
+#define MNN_ERROR(format, ...) {printf(format, ##__VA_ARGS__);fflush(stdout);}
 #endif
 
 #ifdef DEBUG

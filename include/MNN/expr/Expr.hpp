@@ -152,12 +152,15 @@ public:
     static std::pair<std::map<std::string, VARP>, std::map<std::string, VARP>> getInputAndOutput(const std::map<std::string, VARP>& allVariable);
     static std::vector<VARP> mapToSequence(const std::map<std::string, VARP>& source);
     static std::vector<EXPRP> getExecuteOrder(const std::vector<VARP>& output);
+    static std::vector<EXPRP> getExecutorOrderViaBfs(const std::vector<VARP>& outputs);
     static void save(const std::vector<VARP>& vars, const char* fileName);
     static void save(const std::vector<VARP>& vars, NetT* dest);
     
     // Pack a few Variable to compute in one pipeline
     static void prepareCompute(const std::vector<VARP>& vars, bool forceCPU = false);
     static void compute(const std::vector<VARP>& vars, bool forceCPU = false);
+    static void profileExecute(const VARP varp);
+    static void clearCache(const std::vector<VARP>& vars);
 
     size_t linkNumber() const;
     const std::vector<WeakEXPRP>& toExprs() const;
@@ -211,6 +214,7 @@ public:
     bool requireInfo();
     void visitOutputs(const std::function<bool(EXPRP, int)>& visit);
     static void visit(EXPRP expr, const std::function<bool(EXPRP)>& before, const std::function<bool(EXPRP)>& after);
+    static void vistiViaBfs(EXPRP expr, std::vector<EXPRP>& sequence);
 
     const std::vector<WeakEXPRP>& outputs() const {
         return mTo;

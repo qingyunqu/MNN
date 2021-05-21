@@ -14,6 +14,8 @@
 #include <vector>
 #include "SGD.hpp"
 #include "ParameterOptimizer.hpp"
+#define MNN_OPEN_TIME_TRACE
+#include <MNN/AutoTime.hpp>
 
 namespace MNN {
 namespace Train {

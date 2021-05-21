@@ -19,6 +19,9 @@
 #define MNN_EXPRESS_ERROR_REPORT
 #endif
 #define MNN_EXPRESS_OPEN_MEMORY_REUSE
+//#define ALLOCATE_CACHE_ID_RUNTIME
+//#define PROFILE_EXECUTION_IN_LOG
+#define DEBUG_EXECUTION_DETAIL
 namespace MNN {
 namespace Express {
 #ifdef MNN_EXPR_ENABLE_PROFILER
@@ -216,6 +219,10 @@ public:
 
     ErrorCode compute();
     ErrorCode resize();
+    ErrorCode computeDirectly();
+    ErrorCode computeViaCheckpoint();
+    ErrorCode computeIthOp(int i, bool profile=false, bool recompute=false, int skipReleaseOpID=-1);
+
 private:
     std::set<std::shared_ptr<ComputeCache>> mInputs;
     std::vector<Tensor*> mOutputs;
@@ -232,11 +239,33 @@ private:
     std::map<const Op*, std::shared_ptr<Execution>> mCacheExes;
 
     bool zeroInputs() {
-        return mInputs.empty();
+//        return mInputs.empty();
+        return true;
     }
-    ErrorCode swapout(const Tensor* tensor);
-    ErrorCode swapin(const Tensor* tensor);
+    static ErrorCode swapout(const Tensor* tensor);
+    static ErrorCode swapin(const Tensor* tensor);
+    ErrorCode profileExecution();
+    int mUniqueCacheID = 0;
+    std::vector<bool> opNeedRecompute;
+    static std::vector<std::set<int>> opInputs;  // i-th op's inputs and outputs tensors' ids
+//    static std::vector<std::set<int>> opGraph, reversedOpGraph;  // simulate input dependency between op-op (adjacency list)
+    static std::vector<std::vector<int>> fpLevelList;
+    static std::vector<int> tensorFromOp;  // tensorID -> opID
+    static std::vector<int> opLevel;
+    static std::vector<int> validCkeckpoints;
+    static int profiledExecutionSizeWithValidCheckpoint;
+    static void getValidCheckpointLevel();
+    static std::vector<int> getComputeSequence(const char* filename = nullptr);
+    static std::vector<int> selectCheckpoint(int cnt=1);
+    std::vector<int> getRecomputeOpList(int curOpID);
 };
+std::vector<std::set<int>> Executor::ComputeCache::opInputs;  // i-th op's inputs and outputs tensors' ids
+//std::vector<std::set<int>> Executor::ComputeCache::opGraph, Executor::ComputeCache::reversedOpGraph;  // simulate input dependency between op-op (adjacency list)
+std::vector<int> Executor::ComputeCache::tensorFromOp;  // tensorID -> opID
+std::vector<int> Executor::ComputeCache::opLevel;
+std::vector<int> Executor::ComputeCache::validCkeckpoints;
+std::vector<std::vector<int>> Executor::ComputeCache::fpLevelList;
+int Executor::ComputeCache::profiledExecutionSizeWithValidCheckpoint = 0;
 void Executor::setShapeDirty(ComputeCache* cache) {
     cache->setShapeDirty();
 }
@@ -291,6 +320,7 @@ Executor::ComputeCache::~ComputeCache() {
     mCacheExes.clear();
 }
 ErrorCode Executor::ComputeCache::compute() {
+//    MNN_ASSERT(validCkptLevel.size()==0)
     if (mShapeDirty) { // default true
         auto code = resize();
         if (zeroInputs()) {
@@ -303,7 +333,7 @@ ErrorCode Executor::ComputeCache::compute() {
     if (!mContentDirty) {
         return NO_ERROR;
     }
-    /*在MNN训练的设定里面这两个for都没有什么实际的意义T^T*/
+    /*在MNN训练的设定里面这两个for都没有什么实际的意义……T^T*/
     for (auto& c : mInputInside) {
         if (c->mContentDirty) {
             // InputType = VARP::INPUT
@@ -316,27 +346,290 @@ ErrorCode Executor::ComputeCache::compute() {
             return code;
         }
     }
-//    printf("cache.minputs have %d content available directly and mExecution.size = %lu\n", cnt, mExecutions.size());
+    tensorFromOp.resize(mExecutions.size());
+    opNeedRecompute.resize(mExecutions.size());
+    ErrorCode code = computeViaCheckpoint();
+//    ErrorCode code = computeDirectly();
+//    ErrorCode code = computeViaCheckpoint();
+//    if (mExecutions.size() == profiledExecutionSizeWithValidCheckpoint) {
+//        code = computeViaCheckpoint();
+//    } else {
+//        code = computeDirectly();
+//    }
+    if (code != NO_ERROR) {
+        return code;
+    }
+
+    mContentDirty = false;
+    return NO_ERROR;
+}
+
+ErrorCode Executor::ComputeCache::computeDirectly() {
+#ifdef DEBUG_EXECUTION_DETAIL
+    MNN_PRINT("call %s\n", __FUNCTION__ );
+#endif
     mBackend->onExecuteBegin();
     mBackupBackend->onExecuteBegin();
+#ifdef DEBUG_EXECUTION_DETAIL
+    MNN_PRINT("mExecutions.size() = %d\n", mCmdBuffer.command.size());
+#endif
+#ifndef ALLOCATE_CACHE_ID_RUNTIME
+    for(int i=0; i<mCmdBuffer.command.size(); i++) {
+        MNN_ASSERT(mCmdBuffer.command[i].outputs.size() == 1)
+        for(auto output: mCmdBuffer.command[i].outputs) {
+            output->setCacheID(mUniqueCacheID++);
+            tensorFromOp[output->cacheID()] = i;
+        }
+    }
+#endif
     MNN_ASSERT(mExecutions.size() == mCmdBuffer.command.size());
+#ifdef DEBUG_EXECUTION_DETAIL
+    MNN_PRINT("%s: start compute\n", __FUNCTION__ );
+#endif
     for (int i=0; i<mCmdBuffer.command.size(); ++i) {
-//        AUTOTIME;
-//        printf("begin execution %d\n", i);
+        ErrorCode code = computeIthOp(i);
+        if (code != NO_ERROR) {
+            return code;
+        }
+    }
+    mBackend->onExecuteEnd();
+    mBackupBackend->onExecuteEnd();
+    mBackend->onClearBuffer();
+    mBackupBackend->onClearBuffer();
+
+    return NO_ERROR;
+}
+
+ErrorCode Executor::ComputeCache::computeViaCheckpoint() {
+//    std::vector<int> computeSequence = getComputeSequence("compute_list.txt");
+//    for (int i = 0; i < computeSequence.size(); ++i) {
+//        computeSequence[i]=i;
+//    }
+//    if (mCmdBuffer.command.size() != computeSequence.size()) {
+//#ifdef DEBUG_EXECUTION_DETAIL
+//        MNN_PRINT("mExecutions.size() = %d, return compute directly\n", mCmdBuffer.command.size());
+//#endif
+//        return computeDirectly();
+//    }
+    std::vector<int> checkpointOps = {120, 259, 831};
+    checkpointOps.insert(checkpointOps.begin(), 0);
+    int currentCheckpointIdx = 0;
+    MNN_PRINT("call %s\n", __FUNCTION__ );
+    mBackend->onExecuteBegin();
+    mBackupBackend->onExecuteBegin();
+#ifndef ALLOCATE_CACHE_ID_RUNTIME
+    for(int i=0; i<mCmdBuffer.command.size(); i++) {
+        for(auto output: mCmdBuffer.command[i].outputs) {
+            output->setCacheID(mUniqueCacheID++);
+            tensorFromOp[output->cacheID()] = i;
+        }
+    }
+#endif
+    MNN_ASSERT(mExecutions.size() == mCmdBuffer.command.size());
+    for (int i=0; i < mCmdBuffer.command.size(); ++i) {
+        // Execution是否set了对于cmd的input和output tensors是没有影响的
+        // execution仅仅定义了计算的逻辑，但是对于中间的依赖关系是没有影响的
+
+        // 先保证每个input都是valid的，通过bfs找出来需要重新计算的op
+        MNN_PRINT("check if need recompute for cmd[%d]\n", i)
+        int needRecompute = -1;
         auto& cmd = mCmdBuffer.command[i];
-        //get Op
         auto op = cmd.op;
-        bool origin = true;
-        ErrorCode code;
         if (!cmd.buffer.empty()) {
-            origin = false;
             op = flatbuffers::GetMutableRoot<Op>(cmd.buffer.data());
         }
-//        printf("current Op is %d:%s\t", op->type(), EnumNameOpType(op->type()));
-#ifdef MNN_EXPR_ENABLE_PROFILER
-        Timer autoTime;
+        for (auto v = 0; v<cmd.inputs.size() && needRecompute == -1; ++v) {
+            if (!SizeComputer::opNeedContent(op->type(), v)) {
+                continue;
+            }
+            auto des = TensorUtils::getDescribe(cmd.inputs[v]);
+            if (des->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND && des->usage == Tensor::InsideDescribe::NORMAL) {
+                MNN_PRINT("cmd[%d].input[%d] from cmd[%d], needRecompute = %d\n",
+                          i, v, tensorFromOp[cmd.inputs[v]->cacheID()], int(opNeedRecompute[tensorFromOp[cmd.inputs[v]->cacheID()]]))
+                if (des->useCount && opNeedRecompute[tensorFromOp[cmd.inputs[v]->cacheID()]]) {
+                    needRecompute = tensorFromOp[cmd.inputs[v]->cacheID()];
+                    break;
+                }
+            }
+            for (auto& s : des->regions) {
+                auto subDes = TensorUtils::getDescribe(s.origin);
+                if (subDes->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND && subDes->usage == Tensor::InsideDescribe::NORMAL) {
+                    MNN_PRINT("cmd[%d].input[%d].region from cmd[%d], needRecompute = %d\n",
+                              i, v, tensorFromOp[s.origin->cacheID()], int(opNeedRecompute[tensorFromOp[s.origin->cacheID()]]))
+                    if (subDes->useCount && opNeedRecompute[tensorFromOp[s.origin->cacheID()]]) {
+                        needRecompute = tensorFromOp[s.origin->cacheID()];
+                        break;
+                    }
+                }
+            }
+        }
+        if (needRecompute != -1) {
+            MNN_PRINT("cmd[%d] need to recompute cmd[%d] first\n", i, needRecompute);
+            int startRecomputeCheckpointIndex = std::lower_bound(checkpointOps.begin(), checkpointOps.end(), needRecompute) - checkpointOps.begin() - 1;
+            MNN_PRINT("update useCount in [cmd[%d], cmd[%d]) due to recompute",
+                      checkpointOps[startRecomputeCheckpointIndex] + 1, checkpointOps[startRecomputeCheckpointIndex + 1])
+            for (int k = checkpointOps[startRecomputeCheckpointIndex] + 1; k < checkpointOps[startRecomputeCheckpointIndex + 1]; ++k) {
+                auto& cmd_k = mCmdBuffer.command[k];
+                auto op_k = cmd_k.op;
+                if (!cmd_k.buffer.empty()) {
+                    op_k = flatbuffers::GetMutableRoot<Op>(cmd_k.buffer.data());
+                }
+                for (auto v = 0; v<cmd_k.inputs.size(); ++v) {
+                    if (!SizeComputer::opNeedContent(op->type(), v)) {
+                        continue;
+                    }
+                    auto des = TensorUtils::getDescribe(cmd_k.inputs[v]);
+                    if (des->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND && des->usage == Tensor::InsideDescribe::NORMAL) {
+                        des->useCount+=1;
+                        continue;
+                    }
+                    for (auto& s : des->regions) {
+                        auto subDes = TensorUtils::getDescribe(s.origin);
+                        if (subDes->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND && subDes->usage == Tensor::InsideDescribe::NORMAL) {
+                            subDes->useCount+=1;
+                        }
+                    }
+                }
+            }
+
+            for (int k = checkpointOps[startRecomputeCheckpointIndex] + 1; k < checkpointOps[startRecomputeCheckpointIndex + 1]; ++k) {
+#ifdef DEBUG_EXECUTION_DETAIL
+                MNN_PRINT("start recompute execution[%d]\n", k)
 #endif
-        // set execution
+                computeIthOp(k, false, true);
+#ifdef DEBUG_EXECUTION_DETAIL
+                MNN_PRINT("\tfinish recompute execution[%d]\n", k);
+#endif
+            }
+        }
+
+#ifdef DEBUG_EXECUTION_DETAIL
+        MNN_PRINT("start compute execution[%d]\n", i);
+#endif
+        computeIthOp(i, false, false, checkpointOps[currentCheckpointIdx]);
+#ifdef DEBUG_EXECUTION_DETAIL
+        MNN_PRINT("\tfinish compute execution[%d]\n", i);
+#endif
+        // FP阶段，当遇到一个checkpoint的时候就把当前checkpoint和之前的checkpoint之间的临时feature-map都release
+        // 等到之后需要的时候重新计算
+        if (currentCheckpointIdx + 1 < checkpointOps.size() && i == checkpointOps[currentCheckpointIdx + 1]) {
+            MNN_PRINT("reach a checkpoint[%d] = %d, release previous output\n", currentCheckpointIdx+1, checkpointOps[currentCheckpointIdx+1]);
+            bool releaseOutput = true;
+            if(releaseOutput) {
+                MNN_PRINT("release outputs\n");
+                for (int idx = checkpointOps[currentCheckpointIdx] + 1; idx < checkpointOps[currentCheckpointIdx + 1]; ++idx) {
+                    if (idx == 14) {
+                        continue;
+                    }
+#ifdef DEBUG_EXECUTION_DETAIL
+                    MNN_PRINT("try release cmd[%d]\n", idx);
+#endif
+                    auto& cmd_idx = mCmdBuffer.command[idx];
+                    for (auto& output : cmd_idx.outputs) {
+                        auto des = TensorUtils::getDescribe(output);
+                        if (des->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND) { // MNN_PRINT("\tmatch with memory type\n");
+                            if (des->usage == Tensor::InsideDescribe::NORMAL) { // MNN_PRINT("\tmatch with usage\n");
+                                if (nullptr != des->backend) { // MNN_PRINT("\tmatch with backend\n");
+                                    if (des->useCount > 0) { // MNN_PRINT("\tmatch with use count\n");
+                                        // 当前op的output是自己产生的，因此不需要判断opNeedRecompute这个标记，直接release就行，然后标记
+                                        // swapout(output);
+                                        des->backend->onReleaseBuffer(output, Backend::DYNAMIC);
+                                        opNeedRecompute[idx] = true;
+#ifdef DEBUG_EXECUTION_DETAIL
+                                        MNN_PRINT("\tsuccessfully release output of cmd[%d]\n", idx);
+#endif
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                MNN_PRINT("release inputs\n");
+                for (int idx = checkpointOps[currentCheckpointIdx] + 1; idx < checkpointOps[currentCheckpointIdx + 1]; ++idx) {
+                    auto& cmd_idx = mCmdBuffer.command[idx];
+                    auto pOp = cmd_idx.op;
+                    if (!cmd_idx.buffer.empty()) {
+                        pOp = flatbuffers::GetMutableRoot<Op>(cmd_idx.buffer.data());
+                    }
+                    MNN_PRINT("try release cmd[%d]\n", idx);
+                    for (auto v = 0; v < cmd_idx.inputs.size(); ++v) {
+                        if (!SizeComputer::opNeedContent(pOp->type(), v)) {
+                            continue;
+                        }
+                        auto t = cmd_idx.inputs[v];
+                        auto des = TensorUtils::getDescribe(t);
+                        MNN_PRINT("try release cmd[%d].input[%d]\n", idx, v);
+                        if (des->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND) { MNN_PRINT("\tmatch with memory type\n");
+                            if (des->usage == Tensor::InsideDescribe::NORMAL) { MNN_PRINT("\tmatch with usage\n");
+                                if (nullptr != des->backend) { MNN_PRINT("\tmatch with backend\n");
+                                    MNN_PRINT("\t\tcmd[%d].input[%d].useCount = %d\n", idx, v, des->useCount);
+                                    if (des->useCount > 0) { MNN_PRINT("\tmatch with use count\n");
+                                        if (!opNeedRecompute[tensorFromOp[t->cacheID()]]) { MNN_PRINT("\tmatch with opNeedRecompute\n");
+                                            //不同的op的input可能是重叠的，同一个op（raster）的region也有可能是重叠的，所以这里判断一下
+                                            des->backend->onReleaseBuffer(t, Backend::DYNAMIC);
+                                            opNeedRecompute[tensorFromOp[t->cacheID()]] = true;
+                                            MNN_PRINT("\tsuccessfully release cmd[%d].input[%d] from cmd[%d]\n", idx, v, tensorFromOp[t->cacheID()]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        MNN_PRINT("try release cmd[%d].input[%d].regions\n", idx, v);
+                        for (int x=0; x<des->regions.size(); x++) {
+                            auto& s = des->regions[x];
+                            auto subDes = TensorUtils::getDescribe(s.origin);
+                            MNN_ASSERT(subDes->regions.empty());
+                            if (subDes->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND) { MNN_PRINT("\tmatch with memory type\n");
+                                if (subDes->usage == Tensor::InsideDescribe::NORMAL) { MNN_PRINT("\tmatch with usage\n");
+                                    if (nullptr != subDes->backend) { MNN_PRINT("\tmatch with backend\n");
+                                        MNN_PRINT("\t\tcmd[%d].input[%d].region[%d].useCount = %d\n", idx, v, x, subDes->useCount);
+                                        if (subDes->useCount > 0) { MNN_PRINT("\tmatch with use count\n");
+                                            if (!opNeedRecompute[tensorFromOp[s.origin->cacheID()]]) {MNN_PRINT("\tmatch with opNeedRecompute\n");
+                                                //不同的op的input可能是重叠的，同一个op（raster）的region也有可能是重叠的，所以这里判断一下
+                                                subDes->backend->onReleaseBuffer(s.origin, Backend::DYNAMIC);
+                                                opNeedRecompute[tensorFromOp[s.origin->cacheID()]] = true;
+                                                MNN_PRINT("\tsuccessfully release cmd[%d].input[%d].region[%d] from cmd[%d]\n",
+                                                          idx, v, x, tensorFromOp[s.origin->cacheID()]);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            MNN_PRINT("finish release temp tensors of [execution[%d] and execution[%d])\n", checkpointOps[currentCheckpointIdx], checkpointOps[currentCheckpointIdx+1]);
+            currentCheckpointIdx++;
+        }
+    }
+    mBackend->onExecuteEnd();
+    mBackupBackend->onExecuteEnd();
+    return NO_ERROR;
+}
+
+ErrorCode Executor::ComputeCache::computeIthOp(int i, bool profile, bool recompute, int skipReleaseOpID) {
+#ifdef PROFILE_EXECUTION_IN_LOG
+    AUTOTIME;
+#endif
+    auto& cmd = mCmdBuffer.command[i];
+    auto op = cmd.op;
+    bool origin = true;
+    ErrorCode code;
+    if (!cmd.buffer.empty()) {
+        origin = false;
+        op = flatbuffers::GetMutableRoot<Op>(cmd.buffer.data());
+    }
+#ifdef PROFILE_EXECUTION_IN_LOG
+    MNN_PRINT("current Op is %dth:%d:%s\n", i, op->type(), EnumNameOpType(op->type()));
+#endif
+
+#ifdef MNN_EXPR_ENABLE_PROFILER
+    Timer autoTime;
+#endif
+    // set execution
+    if (!recompute) {
         mExecutions[i] = nullptr;
         bool cacheed = false;
         if (!mCacheExes.empty() && origin) {
@@ -359,13 +652,13 @@ ErrorCode Executor::ComputeCache::compute() {
         bool needWrap = false;
         auto bn = mExecutions[i]->backend();
         auto iterType = bn->type();
-        for (int i=0; i<cmd.inputs.size(); ++i) {
-            if (!SizeComputer::opNeedContent(op->type(), i)) {
+        for (int v = 0; v < cmd.inputs.size(); ++v) {
+            if (!SizeComputer::opNeedContent(op->type(), v)) {
                 continue;
             }
-            auto inpDes = TensorUtils::getDescribe(cmd.inputs[i]);
+            auto inpDes = TensorUtils::getDescribe(cmd.inputs[v]);
             if (inpDes->memoryType == Tensor::InsideDescribe::MEMORY_VIRTUAL) {
-                for (auto& reg : inpDes->regions) {
+                for (auto &reg : inpDes->regions) {
                     auto orgDes = TensorUtils::getDescribe(reg.origin);
                     auto tensorBn = orgDes->backend;
                     auto type = MNN_FORWARD_CPU;
@@ -399,139 +692,201 @@ ErrorCode Executor::ComputeCache::compute() {
             // TODO: Support Other op's cache
             mCacheExes.insert(std::make_pair(op, mExecutions[i]));
         }
-        //allocate memory for output tensors
-//        printf("allocate memory for output tensors\n");
-        for (auto t : cmd.outputs) {
-            auto des = TensorUtils::getDescribe(t);
-            if (nullptr == des->backend) {
-                TensorUtils::setLinearLayout(t);
-                auto res = bn->onAcquireBuffer(t, Backend::DYNAMIC);
-                des->backend = bn;
-                if (!res) {
-                    return OUT_OF_MEMORY;
-                }
-            }
+    }
+
+    //allocate memory for output tensors
+    auto bn = mExecutions[i]->backend();
+    for (auto t : cmd.outputs) {
+#ifdef ALLOCATE_CACHE_ID_RUNTIME
+        if (t->cacheID() == -1) {
+            t->setCacheID(mUniqueCacheID++);
+            tensorFromOp[t->cacheID()] = i;
         }
-        //swapin input tensors if needed
-//        printf("swapin input tensors if needed\n");
-        /*
-        for (auto tensor: cmd.inputs) {
-            // tensor.backend != nullptr && usage == NORMAL
-            auto des = TensorUtils::getDescribe(tensor);
-            if (des->usage == Tensor::InsideDescribe::NORMAL &&
-                    des->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND &&
-                    nullptr != des->backend && tensor->buffer().host == nullptr) {
-                auto res = des->backend->onAcquireBuffer(tensor, Backend::DYNAMIC);
-                if (!res) {
-                    return OUT_OF_MEMORY;
-                }
-                code = swapin(tensor);
-                if (code != NO_ERROR) {
-                    return code;
-                }
+#endif
+        auto des = TensorUtils::getDescribe(t);
+        if (nullptr == des->backend) {
+            TensorUtils::setLinearLayout(t);
+            auto res = bn->onAcquireBuffer(t, Backend::DYNAMIC);
+            des->backend = bn;
+            if (!res) {
+                return OUT_OF_MEMORY;
             }
-        }*/
-        // resize execution
-        code = mExecutions[i]->onResize(cmd.inputs, cmd.outputs);
-        if (NO_ERROR != code) {
-            return code;
+#ifdef DEBUG_EXECUTION_DETAIL
+            MNN_PRINT("\tallocate memory for cmd[%d].output\n", i)
+#endif
+        } else if (recompute) {
+            auto res = bn->onAcquireBuffer(t, Backend::DYNAMIC);
+            if (!res) {
+                return OUT_OF_MEMORY;
+            }
+#ifdef DEBUG_EXECUTION_DETAIL
+            MNN_PRINT("\tallocate memory for cmd[%d].output due to recompute\n", i)
+#endif
         }
+    }
+
+    // resize execution
+    code = mExecutions[i]->onResize(cmd.inputs, cmd.outputs);
+    if (NO_ERROR != code) {
+        return code;
+    }
 
 #ifdef MNN_EXPR_ENABLE_PROFILER
-        float costTime = (float)autoTime.durationInUs() / (float)1000;
-ExecutorScope::Current()->addOpCostTime((int)op->type(), costTime);
+    float costTime = (float)autoTime.durationInUs() / (float)1000;
+    ExecutorScope::Current()->addOpCostTime((int)op->type(), costTime);
 #endif
 
 #ifdef MNN_EXPR_ENABLE_PROFILER
-        Timer autoTime;
+    Timer autoTime;
 #endif
-        // execute Op
-        code = mExecutions[i]->onExecute(cmd.inputs, cmd.outputs);
-        if (NO_ERROR != code) {
+    // execute
+    code = mExecutions[i]->onExecute(cmd.inputs, cmd.outputs);
+    if (NO_ERROR != code) {
 #ifdef MNN_EXPRESS_ERROR_REPORT
-            auto op = cmd.buffer.empty() ? cmd.op : flatbuffers::GetRoot<Op>(cmd.buffer.data());
-    MNN_ERROR("Error to compute for %s, \n", EnumNameOpType(op->type()));
+        auto op = cmd.buffer.empty() ? cmd.op : flatbuffers::GetRoot<Op>(cmd.buffer.data());
+        MNN_ERROR("Error to compute for %s, \n", EnumNameOpType(op->type()));
 #endif
-            mBackend->onExecuteEnd();
-            return code;
-        }
-        /*printf("\t");
-        for (int i = 0; i < cmd.inputs.size(); i++) {
-            if (op->type() == OpType_Raster) {
-                // only valid for single convert like broadcast/reshape, succeed in linear regression
-                // fail in complex models like MobilenetV2
-                auto& ori = TensorUtils::getDescribe(cmd.inputs[i])->regions[0].origin;
-                printf("input[%d].format = %s, input[%d].shape: ", i, ori->myGetDimensionType().c_str(), i);
-                ori->myPrintShape();
-            } else {
-                printf("input[%d].format = %s, input[%d].shape: ", i, cmd.inputs[i]->myGetDimensionType().c_str(), i);
-                cmd.inputs[i]->myPrintShape();
-            }
-            printf("\t");
-        }
-        printf("\n\t");
-        for (int i = 0; i < cmd.outputs.size(); i++) {
-            printf("output[%d].format = %s\toutput[%d].shape: ", i, cmd.outputs[i]->myGetDimensionType().c_str(), i);
-            cmd.outputs[i]->myPrintShape();
-            printf("\t");
-        }
-        printf("\n\t");*/
-        // release memory for no-usable tensors
-        for (auto v = 0; v<cmd.inputs.size(); ++v) {
-            if (!SizeComputer::opNeedContent(op->type(), v)) {
-                continue;
-            }
-            auto t = cmd.inputs[v];
-            auto des = TensorUtils::getDescribe(t);
-            if (des->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND) {
-                if (des->usage == Tensor::InsideDescribe::NORMAL) {
-                    des->useCount-=1;
-                    if (nullptr != des->backend) {
-                        if (0 == des->useCount) {
-                            des->backend->onReleaseBuffer(t, Backend::DYNAMIC);
-                        } /*else {
-                            code = swapout(t);
-                            if (code != NO_ERROR){
-                                return code;
-                            }
-                            // des->backend->onReleaseBuffer(t, Backend::DYNAMIC);
-                        }*/
+        mBackend->onExecuteEnd();
+        return code;
+    }
+//    if (recompute) {
+//        for (auto t: cmd.outputs) {
+//            if (t->cacheID() == 17) {
+//                swapout(t);
+//            }
+//        }
+//    }
+#ifdef DEBUG_EXECUTION_DETAIL
+    MNN_PRINT("\t%s: finish onExecute\n", __FUNCTION__ );
+#endif
 
-                    }
-                }
+#ifdef PROFILE_EXECUTION_IN_LOG
+    // profile inputs outputs temps
+    MNN_PRINT("\tinputs: [");
+#endif
+    for (auto v = 0; v<cmd.inputs.size(); ++v) {
+        if (!SizeComputer::opNeedContent(op->type(), v)) {
+            continue;
+        }
+        auto des = TensorUtils::getDescribe(cmd.inputs[v]);
+        if (des->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND && des->usage == Tensor::InsideDescribe::NORMAL) {
+#ifdef PROFILE_EXECUTION_IN_LOG
+            MNN_PRINT("(%d %d), ", cmd.inputs[v]->cacheID(), cmd.inputs[v]->size());
+#endif
+            if (profile) {
+                opInputs[i].insert(cmd.inputs[v]->cacheID());
             }
-            for (auto& s : des->regions) {
-                auto subDes = TensorUtils::getDescribe(s.origin);
-                MNN_ASSERT(subDes->regions.empty());
-                if (subDes->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND && subDes->usage == Tensor::InsideDescribe::NORMAL) {
-                    subDes->useCount-=1;
-                    if (nullptr != subDes->backend) {
-                        if (0 == subDes->useCount) {
-                            subDes->backend->onReleaseBuffer(s.origin, Backend::DYNAMIC);
-                        } /*else {
-                            code = swapout(s.origin);
-                            if (code != NO_ERROR){
-                                return code;
-                            }
-                            // subDes->backend->onReleaseBuffer(s.origin, Backend::DYNAMIC);
-                        }*/
-
-                    }
+        }
+        for (auto& s : des->regions) {
+            auto subDes = TensorUtils::getDescribe(s.origin);
+            if (subDes->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND && subDes->usage == Tensor::InsideDescribe::NORMAL) {
+#ifdef PROFILE_EXECUTION_IN_LOG
+                MNN_PRINT("(%d %d), ", s.origin->cacheID(), s.origin->size());
+#endif
+                if (profile) {
+                    opInputs[i].insert(s.origin->cacheID());
                 }
             }
         }
+    }
+#ifdef DEBUG_EXECUTION_DETAIL
+    MNN_PRINT("\t%s: finish profile\n", __FUNCTION__ );
+#endif
+
+#ifdef PROFILE_EXECUTION_IN_LOG
+    MNN_PRINT("]\n\toutputs: [");
+    for (auto & output : cmd.outputs) {
+        MNN_PRINT("(%d %d), ", output->cacheID(), output->size());
+    }
+    MNN_PRINT("]\n\ttemporary: [");
+    for (auto & output : cmd.outputs) {
+        auto des = TensorUtils::getDescribe(output);
+        if (des->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND && des->usage == Tensor::InsideDescribe::NORMAL) {
+            MNN_PRINT("(%d %d), ", output->cacheID(), output->size());
+            continue;
+        }
+    }
+    MNN_PRINT("]\n\trelease: [");
+#endif
+    // release memory for no-usable tensors
+    for (auto v = 0; v<cmd.inputs.size(); ++v) {
+        if (!SizeComputer::opNeedContent(op->type(), v)) {
+            continue;
+        }
+        auto t = cmd.inputs[v];
+        auto des = TensorUtils::getDescribe(t);
+        if (des->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND) {
+            if (des->usage == Tensor::InsideDescribe::NORMAL) {
+                des->useCount-=1;
+#ifdef DEBUG_EXECUTION_DETAIL
+                MNN_PRINT("\t%s: cmd[%d].input[%d].useCount -- to %d\n", __FUNCTION__, i, v, des->useCount);
+#endif
+                if (nullptr != des->backend) {
+                    if (0 == des->useCount && tensorFromOp[t->cacheID()] != skipReleaseOpID) {
+#ifdef DEBUG_EXECUTION_DETAIL
+                        MNN_PRINT("\t%s: release no-usable cmd[%d].input[%d] generated by cmd[%d]\n",
+                               __FUNCTION__ , i, v, tensorFromOp[t->cacheID()]);
+#endif
+                        des->backend->onReleaseBuffer(t, Backend::DYNAMIC);
+#ifdef PROFILE_EXECUTION_IN_LOG
+                        MNN_PRINT("(%d %d), ", t->cacheID(), t->size());
+#endif
+                    } else {
+                        //MNN_PRINT("\tcannot release cmd[%d].input[%d] generated by cmd[%d] due to useCount>0\n", i, v, tensorFromOp[t->cacheID()]);
+                    }
+
+                }
+            }
+        }
+        int regidx = 0;
+        for (auto& s : des->regions) {
+            auto subDes = TensorUtils::getDescribe(s.origin);
+            MNN_ASSERT(subDes->regions.empty());
+            if (subDes->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND && subDes->usage == Tensor::InsideDescribe::NORMAL) {
+                subDes->useCount-=1;
+#ifdef DEBUG_EXECUTION_DETAIL
+                MNN_PRINT("\t%s: cmd[%d].input[%d].region[%d].useCount -- to %d\n", __FUNCTION__, i, v, regidx, subDes->useCount);
+#endif
+                if (nullptr != subDes->backend) {
+                    if (0 == subDes->useCount && tensorFromOp[s.origin->cacheID()] != skipReleaseOpID) {
+#ifdef DEBUG_EXECUTION_DETAIL
+                        MNN_PRINT("\t%s: release no-usable cmd[%d].input[%d].region[%d] generated by cmd[%d]\n",
+                                  __FUNCTION__ , i, v, regidx, tensorFromOp[s.origin->cacheID()]);
+#endif
+                        subDes->backend->onReleaseBuffer(s.origin, Backend::DYNAMIC);
+#ifdef PROFILE_EXECUTION_IN_LOG
+                        MNN_PRINT("(%d %d), ", s.origin->cacheID(), s.origin->size());
+#endif
+                    } else {
+                        //MNN_PRINT("\tcannot release cmd[%d].input[%d].region generated by cmd[%d] due to useCount>0\n", i, v, tensorFromOp[s.origin->cacheID()]);
+                    }
+
+                }
+            }
+            regidx++;
+        }
+    }
+#ifdef DEBUG_EXECUTION_DETAIL
+    MNN_PRINT("\t%s: finish release memory for no-usable tensors\n", __FUNCTION__ );
+#endif
+#ifdef PROFILE_EXECUTION_IN_LOG
+    MNN_PRINT("]\n\t");
+#endif
+
 #ifdef MNN_EXPR_ENABLE_PROFILER
-        float costTime = (float)autoTime.durationInUs() / (float)1000;
+    float costTime = (float)autoTime.durationInUs() / (float)1000;
 auto op = iter.op;
 if (!iter.buffer.empty()) {
     op = flatbuffers::GetMutableRoot<Op>(iter.buffer.data());
 }
 ExecutorScope::Current()->addOpCostTime((int)op->type(), costTime);
 #endif
+    if(!profile) {
+        opNeedRecompute[i] = false;
     }
-    mBackend->onExecuteEnd();
-    mBackupBackend->onExecuteEnd();
-    mContentDirty = false;
+#ifdef DEBUG_EXECUTION_DETAIL
+    MNN_PRINT("\t%s: finish & return\n", __FUNCTION__ );
+#endif
     return NO_ERROR;
 }
 
@@ -544,8 +899,12 @@ ErrorCode Executor::ComputeCache::resize() {
             return CALL_BACK_STOP;
         }
     }
+    if (!mInputs.empty()) {
+        MNN_PRINT("%s: mInputCache.size() = %d......shit\n", __FUNCTION__ , mInputs.size());
+    }
     for (auto c : mInputs) {
         auto code = c->resize();
+        MNN_PRINT("finish mInput.resize()\n");
         if (NO_ERROR != code) {
             return code;
         }
@@ -651,12 +1010,15 @@ ExecutorScope::Current()->addOpCostTime((int)OpType_If, costTime);
             auto des = TensorUtils::getDescribe(cmd.inputs[v]);
             if (des->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND && des->usage == Tensor::InsideDescribe::NORMAL) {
                 des->useCount+=1;
+//                MNN_PRINT("%s: cmd[%d].input[%d].useCount ++ to %d\n", __FUNCTION__, k, v, des->useCount);
                 continue;;
             }
+            int regidx = 0;
             for (auto& s : des->regions) {
                 auto subDes = TensorUtils::getDescribe(s.origin);
                 if (subDes->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND && subDes->usage == Tensor::InsideDescribe::NORMAL) {
                     subDes->useCount+=1;
+//                    MNN_PRINT("%s: cmd[%d].input[%d].region[%d].useCount ++ to %d\n", __FUNCTION__, k, v, regidx++, subDes->useCount);
                 }
             }
         }
@@ -665,6 +1027,8 @@ ExecutorScope::Current()->addOpCostTime((int)OpType_If, costTime);
 
     /** Prepare Begin */
     if (!zeroInputs()) {
+        MNN_PRINT("not zero inputs: %d\tself.execution.size() = %d\n", mInputs.size(), mCmdBuffer.command.size());
+//        MNN_ASSERT(0)
         mBackend->onResizeBegin();
         mExecutions.resize(mCmdBuffer.command.size());
         for (int k=0; k<mCmdBuffer.command.size(); ++k) {
@@ -795,23 +1159,23 @@ ExecutorScope::Current()->addOpCostTime((int)OpType_If, costTime);
 
 ErrorCode Executor::ComputeCache::swapout(const Tensor *tensor) {
     char fn[32];
-    sprintf(fn, "swap/%d.mnn.tensor", tensor->ID());
+    sprintf(fn, "swap/%d.mnn.tensor", tensor->cacheID());
     FILE* f = fopen(fn, "wb");
     int numwrite = -1;
     if(f != nullptr) {
         numwrite = fwrite(tensor->host<void>(), sizeof(char), tensor->size(), f);
-//        printf("%d\n", numwrite);
+//        MNN_PRINT("%d\n", numwrite);
     }
     if (numwrite != tensor->size()){
         return SWAP_OUT_ERROR;
     }
-//    printf("swapout %d bytes of tensor:%d \n", tensor->size(), tensor->ID());
+//    MNN_PRINT("swapout %d bytes of tensor:%d \n", tensor->size(), tensor->ID());
     return NO_ERROR;
 }
 
 ErrorCode Executor::ComputeCache::swapin(const Tensor *tensor) {
     char fn[32];
-    sprintf(fn, "swap/%d.mnn.tensor", tensor->ID());
+    sprintf(fn, "swap/%d.mnn.tensor", tensor->cacheID());
     FILE* f = fopen(fn, "rb");
     int numread = -1;
     if (f != nullptr) {
@@ -820,9 +1184,343 @@ ErrorCode Executor::ComputeCache::swapin(const Tensor *tensor) {
     if (numread != tensor->size()){
         return SWAP_IN_ERROR;
     }
-//    printf("swapin %d bytes of tensor:%d \n", tensor->size(), tensor->ID());
+//    MNN_PRINT("swapin %d bytes of tensor:%d \n", tensor->size(), tensor->ID());
     return NO_ERROR;
 }
+
+ErrorCode Executor::ComputeCache::profileExecution() {
+    MNN_PRINT("call %s\n", __FUNCTION__ );
+    if (mShapeDirty) { // default true
+        auto code = resize();
+        if (zeroInputs()) {
+            mExecutions.resize(mCmdBuffer.command.size());
+        }
+        if (NO_ERROR != code) {
+            return code;
+        }
+    }
+    /*在MNN训练的设定里面这两个for都没有什么实际的意义T^T*/
+    for (auto& c : mInputInside) {
+        if (c->mContentDirty) {
+            // InputType = VARP::INPUT
+            return CALL_BACK_STOP;
+        }
+    }
+    for (auto c : mInputs) {
+        auto code = c->compute();
+        if (NO_ERROR != code) {
+            return code;
+        }
+    }
+//    MNN_PRINT("cache.minputs have %d content available directly and mExecution.size = %lu\n", cnt, mExecutions.size());
+    if (mCmdBuffer.command.size()==1) {
+        return NO_ERROR;
+    }
+    {
+        // resize profile infos
+        opInputs.resize(mExecutions.size());
+        opLevel.resize(mExecutions.size());
+        int outputsSize = 0;
+        for (auto& cmd : mCmdBuffer.command) {
+            outputsSize += cmd.outputs.size();
+        }
+        tensorFromOp.resize(outputsSize);
+    }
+    mBackend->onExecuteBegin();
+    mBackupBackend->onExecuteBegin();
+    MNN_PRINT("%s: mExecutions.size() = %d\n", __FUNCTION__, mCmdBuffer.command.size());
+#ifndef ALLOCATE_CACHE_ID_RUNTIME
+    for(int i=0; i<mCmdBuffer.command.size(); ++i) {
+        for(auto output: mCmdBuffer.command[i].outputs) {
+            output->setCacheID(mUniqueCacheID++);
+            tensorFromOp[output->cacheID()] = i;
+        }
+    }
+#endif
+    MNN_PRINT("%s: begin profile\n", __FUNCTION__ );
+    MNN_ASSERT(mExecutions.size() == mCmdBuffer.command.size());
+    for (int i=0; i<mCmdBuffer.command.size(); ++i) {
+        ErrorCode code = computeIthOp(i, true);
+        if(code != NO_ERROR) {
+            opInputs.clear();
+            opLevel.clear();
+            tensorFromOp.clear();
+            return code;
+        }
+    }
+    mBackend->onExecuteEnd();
+    mBackupBackend->onExecuteEnd();
+    mContentDirty = false;
+    getValidCheckpointLevel();
+    MNN_PRINT("%s: finish & return\n", __FUNCTION__ );
+    return NO_ERROR;
+
+}
+
+void Executor::ComputeCache::getValidCheckpointLevel() {
+    // build input dependency opGraph
+    /*std::vector<std::set<int>> opGraph, reversedOpGraph;
+    opGraph.resize(opInputs.size());
+    reversedOpGraph.resize(opInputs.size());
+
+    std::vector<int> indegree;
+    indegree.resize(opInputs.size());
+    std::set<int> validCkpt;
+
+    std::queue<int> que;
+    // build graph
+    for (int i = 0; i < opInputs.size(); ++i) {
+        indegree[i] = 0;
+        for (auto t: opInputs[i]) {
+            int fromOp = tensorFromOp[t];
+            opGraph[fromOp].insert(i);
+            reversedOpGraph[i].insert(fromOp);
+            indegree[i]++;
+        }
+    }
+    MNN_PRINT("%s: finish build graph\n", __FUNCTION__ );
+    // getValidCheckpointLevel via toposort
+    for (int i = 0; i < indegree.size(); ++i) {
+        if (indegree[i] == 0) {
+            que.push(i);
+            opLevel[i] = 0;
+        }
+    }
+    while (!que.empty()) {
+        int cur = que.front();
+        que.pop();
+        for (auto op: opGraph[cur]) {
+            // cur -> op
+            indegree[op]--;
+            if(indegree[op] == 0) {
+                que.push(op);
+                opLevel[op] = opLevel[cur]+1;
+            }
+        }
+    }
+//    for (int i = 0; i < opLevel.size(); ++i) {
+//        MNN_PRINT("%s: opLevel[%d] = %d\n", __FUNCTION__ , i, opLevel[i]);
+//    }
+//    MNN_PRINT("%s: getValidCheckpointLevel\n", __FUNCTION__ );
+    // check valid ckpt level
+    int threshold = opInputs.size() / 3;
+    for (int i = 0; i < threshold; ++i) {
+        MNN_PRINT("%s: opLevel[%d] = %d\n", __FUNCTION__ , i, opLevel[i]);
+    }
+    for (int i = 0; i < reversedOpGraph.size(); ++i) {
+        MNN_PRINT("%s: reversedOpGraph[%d] = {", __FUNCTION__ , i);
+        for (auto fromop: reversedOpGraph[i]) {
+            MNN_PRINT("%d ", fromop);
+        }
+        MNN_PRINT("\n");
+    }
+
+    fpLevelList.resize(opLevel[threshold-1] + 1);
+    for (int i = 0; i < threshold; ++i) {
+        fpLevelList[opLevel[i]].push_back(i);
+    }
+    int idx = fpLevelList.size()-1;
+    MNN_PRINT("%s: threshold = %d, init idx = %d\n", __FUNCTION__, threshold, idx);
+    while (idx>=0) {
+        std::vector<int> depends;
+        for(auto op: fpLevelList[idx]) {
+            for (auto fromOp: reversedOpGraph[op]) {
+                if (opLevel[fromOp]) {
+                    depends.push_back(opLevel[fromOp]);
+                }
+            }
+        }
+        if (depends.empty()) {
+            idx--;
+        } else {
+            MNN_ASSERT(*std::max_element(depends.begin(), depends.end()) < idx)
+            int minDepend = *std::min_element(depends.begin(), depends.end());
+            if (minDepend+1 == idx) {
+                validCkpt.insert(idx);
+                validCkpt.insert(idx-1);
+            }
+            idx = minDepend;
+        }
+    }
+    opGraph.clear();
+    reversedOpGraph.clear();
+//    opOutputs.clear();
+    if(!validCkpt.empty()) {
+        validCkptLevel.assign(validCkpt.begin(), validCkpt.end());
+        profiledExecutionSizeWithValidCheckpoint = opInputs.size();
+        MNN_PRINT("%s: finish check valid ckpt level\n", __FUNCTION__ );
+        MNN_PRINT("%s: valid ckpt level has %d elements\n", __FUNCTION__, validCkptLevel.size());
+//        for (auto ckptLevel: validCkptLevel) {
+//            MNN_PRINT("fp level = %d is valid ckpt level with op: [", ckptLevel);
+//            for (auto ckpt: fpLevelList[ckptLevel]) {
+//                MNN_PRINT("%d ", ckpt);
+//            }
+//            MNN_PRINT("]\n");
+//        }
+        MNN_PRINT("%s: finish & return\n", __FUNCTION__ );
+    }*/
+    std::vector<std::set<int>> reversedOpGraph;
+    reversedOpGraph.resize(opInputs.size());
+    std::set<int> validCkpt;
+
+    // build graph
+    for (int i = 0; i < opInputs.size(); ++i) {
+        for (auto t: opInputs[i]) {
+            int fromOp = tensorFromOp[t];
+            reversedOpGraph[i].insert(fromOp);
+        }
+    }
+    int idx = opInputs.size()/3;
+    for (int i = 0; i < reversedOpGraph.size(); ++i) {
+        MNN_PRINT("%s: reversedOpGraph[%d] = {", __FUNCTION__ , i);
+        for (auto fromop: reversedOpGraph[i]) {
+            MNN_PRINT("%d ", fromop);
+        }
+        MNN_PRINT("\n");
+    }
+    while (idx >= 0) {
+        if (reversedOpGraph[idx].empty()) {
+            MNN_PRINT("reversedOpGraph[%d].empty()\n", idx);
+            idx--;
+        } else {
+            int mindepends = opInputs.size();
+            for (auto depends: reversedOpGraph[idx]) {
+                if (depends < mindepends) {
+                    mindepends = depends;
+                }
+            }
+            MNN_PRINT("reversedOpGraph[%d].mindepends = %d\n", idx, mindepends);
+            if (mindepends + 1 == idx) {
+                // 这里没有idx：0->1->2->3->4   0->3    2->4
+                // 此时1只依赖于0，但是因为0->2导致了
+                validCkpt.insert(idx - 1);
+            }
+            idx = mindepends;
+        }
+    }
+    if (!validCkpt.empty()) {
+        profiledExecutionSizeWithValidCheckpoint=opInputs.size();
+        validCkeckpoints.assign(validCkpt.begin(), validCkpt.end());
+        std::sort(validCkeckpoints.begin(), validCkeckpoints.end());
+        MNN_PRINT("%s: valid ckpt has %d elements\n\t[", __FUNCTION__, validCkeckpoints.size());
+        for (auto ckpt: validCkeckpoints) {
+            MNN_PRINT("%d ", ckpt);
+        }
+        MNN_PRINT("]\n%s: finish & return\n", __FUNCTION__ );
+    }
+}
+
+std::vector<int> Executor::ComputeCache::getComputeSequence(const char *filename) {
+    if (filename == nullptr) {
+        return {};
+    }
+    std::ifstream infile(filename, std::ios::in);
+    if (!infile) {
+        return {};
+    }
+    std::vector<int>res;
+    int a;
+    while(infile >> a) {
+        res.push_back(a);
+    }
+    return std::move(res);
+}
+
+std::vector<int> Executor::ComputeCache::selectCheckpoint(int cnt) {
+    /*int fp_thres = profiledExecutionSizeWithValidCheckpoint / 3;
+    int interval = fp_thres / (cnt + 1);
+    std::vector<int> ckpt_opid;
+    std::vector<bool> visited;
+    visited.resize(fpLevelList.size());
+    int initCkptL = -1;
+    for (int i = 0; i < fpLevelList.size(); ++i) {
+        if (fpLevelList[i].size() == 1) {
+            initCkptL = i;
+            break;
+        }
+    }
+    if(initCkptL == -1) {
+        return ckpt_opid;
+    }
+    for (int i = 1; i <= cnt; ++i) {
+        int validL = 0;
+        for (auto ckptL: validCkeckpoints) {
+            if(abs(ckptL - i * interval) < abs(validL- i * interval) && !visited[ckptL] && fpLevelList[ckptL].size() == 1) {
+                // 这个if条件有bug，interval是根据op数量确定的，不能和ckptLevel直接比较
+                validL = ckptL;
+            }
+        }
+        ckpt_opid.push_back(fpLevelList[validL][0]);
+    }
+    return ckpt_opid;*/
+    int fp_thres = profiledExecutionSizeWithValidCheckpoint / 3;
+    int interval = fp_thres / (cnt + 1);
+    std::vector<int> ckpt_opid;
+    std::vector<bool> visited(opInputs.size());
+    for (int i = 1; i <= cnt; ++i) {
+        int valid = 0;
+        for (auto ckpt: validCkeckpoints) {
+            if(abs(ckpt - i * interval) < abs(valid - i * interval) && !visited[ckpt]) {
+                valid = ckpt;
+            }
+        }
+        ckpt_opid.push_back(valid);
+    }
+    return ckpt_opid;
+}
+
+std::vector<int> Executor::ComputeCache::getRecomputeOpList(int curOpID) {
+    std::vector<int>recomputeList;
+    std::queue<int> bfsQ;
+    std::vector<bool> visit(opNeedRecompute.size());
+    bfsQ.push(curOpID);
+
+    while(!bfsQ.empty()) {
+        int opid = bfsQ.front();
+        bfsQ.pop();
+        visit[opid] = true;
+        recomputeList.push_back(opid);
+        auto& cmd = mCmdBuffer.command[opid];
+        auto op = cmd.op;
+        if (!cmd.buffer.empty()) {
+            op = flatbuffers::GetMutableRoot<Op>(cmd.buffer.data());
+        }
+        for (auto v = 0; v<cmd.inputs.size(); ++v) {
+            if (!SizeComputer::opNeedContent(op->type(), v)) {
+                continue;
+            }
+            auto t = cmd.inputs[v];
+            auto des = TensorUtils::getDescribe(t);
+            if (des->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND) {
+                if (des->usage == Tensor::InsideDescribe::NORMAL) {
+                    if (nullptr != des->backend) {
+                        if (des->useCount && opNeedRecompute[tensorFromOp[t->cacheID()]] && !visit[tensorFromOp[t->cacheID()]]) {
+                            bfsQ.push(tensorFromOp[t->cacheID()]);
+                            visit[tensorFromOp[t->cacheID()]] = true;
+                        }
+                    }
+                }
+            }
+            for (auto& s : des->regions) {
+                auto subDes = TensorUtils::getDescribe(s.origin);
+                MNN_ASSERT(subDes->regions.empty());
+                if (subDes->memoryType == Tensor::InsideDescribe::MEMORY_BACKEND && subDes->usage == Tensor::InsideDescribe::NORMAL) {
+                    if (nullptr != subDes->backend) {
+                        if (subDes->useCount && opNeedRecompute[tensorFromOp[s.origin->cacheID()]] && !visit[tensorFromOp[s.origin->cacheID()]]) {
+                            bfsQ.push(tensorFromOp[s.origin->cacheID()]);
+                            visit[tensorFromOp[s.origin->cacheID()]] = true;
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+    std::sort(recomputeList.begin(), recomputeList.end());
+    MNN_ASSERT(*recomputeList.rbegin() == curOpID)
+    return std::move(recomputeList);
+}
+
 static void _collectExecuteUnit(std::vector<std::shared_ptr<Executor::Unit>>& dest, EXPRP expr) {
     auto& inputs = expr->inputs();
     auto& req = expr->inside()->mReq.contentNeedContent;
@@ -890,7 +1588,9 @@ void Executor::_create(const std::vector<EXPRP>& outputs, std::set<std::shared_p
     }
     for (auto expr : packed) {
         _collectExecuteUnit(packedCache->mUnits, expr);
+//        MNN_PRINT("%s: mUnits.size() = %d\n", __FUNCTION__, packedCache->mUnits.size());
     }
+//    MNN_ASSERT(0)
     for (auto expr : packed) {
         expr->inside()->mCache = packedCache;
     }
@@ -901,7 +1601,7 @@ void Executor::_visit(EXPRP expr, std::set<std::shared_ptr<Executor::ComputeCach
     auto& inputs = expr->inputs();
     auto& req = expr->inside()->mReq.contentNeedContent;
     MNN_ASSERT(inputs.size() == req.size());
-    
+
     // Create Input's Unit / Cache
     for (int i=0; i<inputs.size(); ++i) {
         if (!req[i]) {
@@ -914,6 +1614,7 @@ void Executor::_visit(EXPRP expr, std::set<std::shared_ptr<Executor::ComputeCach
         }
         auto inputCache = inputExpr.first->inside()->mCache;
         if (nullptr != inputCache) {
+            MNN_PRINT("inputExpr.first->inside()->mCache != nullptr...mdzz\n");
             inputCaches.insert(inputCache);
             continue;
         }
@@ -957,6 +1658,7 @@ void Executor::_visit(EXPRP expr, std::set<std::shared_ptr<Executor::ComputeCach
             continue;
         }
         MNN_ASSERT(nullptr != inputExpr.first->inside()->mCache);
+        MNN_PRINT("inputExpr.first->inside()->mCache != nullptr...mdzz\n");
         inputCaches.insert(inputExpr.first->inside()->mCache);
         auto offset = inputExpr.second + inputExpr.first->inside()->mCacheOffset;
         unit.inputs[i] = inputExpr.first->inside()->mCache->mOutputs[offset];
@@ -1013,6 +1715,10 @@ void Executor::dumpProfile() {
 #ifdef MNN_EXPR_ENABLE_PROFILER
     mProfiler->dump();
 #endif
+}
+
+void Executor::profileCacheExecution(std::shared_ptr<ComputeCache> cache) {
+    cache->profileExecution();
 }
 
 } // namespace Express

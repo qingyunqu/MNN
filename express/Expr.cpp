@@ -555,6 +555,25 @@ void Expr::visit(EXPRP expr, const std::function<bool(EXPRP)>& before, const std
     after(expr);
 }
 
+void Expr::vistiViaBfs(EXPRP expr, std::vector<EXPRP> &sequence) {
+    std::queue<EXPRP> bfsQ;
+    bfsQ.push(expr);
+    while (!bfsQ.empty()) {
+        EXPRP e = bfsQ.front();
+        bfsQ.pop();
+        if (!e->visited()) {
+            sequence.emplace(sequence.begin(), e);
+            e->setVisited(true);
+            for(auto& input: e->inputs()) {
+                if(!input->mFrom->visited()) {
+                    bfsQ.push(input->mFrom);
+                }
+            }
+        }
+    }
+
+}
+
 void* Variable::readInternal(bool forShape) {
     if (nullptr == mFrom->get()) {
         if (VARP::INPUT == mFrom->mType) {
@@ -641,6 +660,8 @@ void Variable::prepareCompute(const std::vector<VARP>& vars, bool forceCpu) {
         v->expr().first->setVisited(false);
     }
     ExecutorScope::Current()->makeCache(std::move(exprs), forceCpu);
+//    ExecutorScope::Current()->profileCacheExecution(vars[0]->mFrom->inside()->mCache);
+//    MNN_ASSERT(0)
 }
 
 void Variable::compute(const std::vector<VARP>& vars, bool forceCPU) {
@@ -652,6 +673,38 @@ void Variable::compute(const std::vector<VARP>& vars, bool forceCPU) {
                 ExecutorScope::Current()->runCache(inside->mCache);
             }
         }
+    }
+}
+
+void Variable::profileExecute(const VARP varp) {
+    if (varp->mFrom == nullptr) {
+        printf("don't need to profile execution\n");
+        return;
+    }
+    auto cache = varp->mFrom->inside()->mCache;
+    if(cache == nullptr) {
+        ExecutorScope::Current()->makeCache({varp->mFrom}, false);
+        cache = varp->mFrom->inside()->mCache;
+    }
+    MNN_ASSERT(cache != nullptr)
+    ExecutorScope::Current()->profileCacheExecution(cache);
+}
+
+void Variable::clearCache(const std::vector<VARP> &vars) {
+    std::vector<EXPRP> exprs;
+    for (auto v : vars) {
+        if (!v->expr().first->visited()) {
+            v->expr().first->inside()->mCache = nullptr;
+            v->expr().first->requireInfo();
+            v->expr().first->setVisited(true);
+            exprs.emplace_back(v->expr().first);
+        }
+    }
+    for (auto v : vars) {
+        v->expr().first->setVisited(false);
+    }
+    for(auto expr: exprs) {
+        expr->inside()->mCache.reset();
     }
 }
 
@@ -972,6 +1025,28 @@ std::vector<EXPRP> Variable::getExecuteOrder(const std::vector<VARP>& outputs) {
                         });
     }
     for (auto expr : sequence) {
+        expr->setVisited(false);
+    }
+    MNN_PRINT("%s: ExecuteOrder.size = %d\n", __FUNCTION__ , sequence.size());
+    return sequence;
+
+//    std::vector<EXPRP> sequence;
+//    for (auto iter=outputs.rbegin(); iter!=outputs.rend(); iter++) {
+//        Expr::vistiViaBfs((*iter)->mFrom, sequence);
+//    }
+//    for (auto& expr : sequence) {
+//        expr->setVisited(false);
+//    }
+//    printf("%s: ExecuteOrder.size = %d\n", __FUNCTION__ , sequence.size());
+//    return sequence;
+}
+
+std::vector<EXPRP> Variable::getExecutorOrderViaBfs(const std::vector<VARP> &outputs) {
+    std::vector<EXPRP> sequence;
+    for (auto output : outputs) {
+        Expr::vistiViaBfs(output->mFrom, sequence);
+    }
+    for (auto& expr : sequence) {
         expr->setVisited(false);
     }
     return sequence;

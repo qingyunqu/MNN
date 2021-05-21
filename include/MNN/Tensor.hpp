@@ -258,6 +258,12 @@ public:
     inline const int ID() const {
         return mID;
     }
+    inline void setCacheID(int id) {
+        mCacheID = id;
+    }
+    inline int cacheID() const {
+        return mCacheID;
+    }
 
 public:
     /**
@@ -275,6 +281,7 @@ private:
     halide_buffer_t mBuffer;
     struct InsideDescribe* mDescribe;
     int mID = -1;
+    int mCacheID = -1;
 
 private:
     static int uniqueID;

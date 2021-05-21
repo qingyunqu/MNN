@@ -10,6 +10,7 @@
 #define ParameterOptimizer_hpp
 #include <MNN/expr/Expr.hpp>
 #include <MNN/expr/Module.hpp>
+#include <MNN/expr/Executor.hpp>
 #include <set>
 namespace MNN {
 namespace Train {
@@ -23,11 +24,13 @@ public:
 
     ParameterOptimizer(std::shared_ptr<Express::Module> module);
     virtual ~ParameterOptimizer() = default;
-    bool step(Express::VARP loss);
+
+    virtual bool step(Express::VARP loss);
     int currentStep();
     void setCurrentStep(int step);
 
     virtual std::map<Express::VARP, Express::VARP> onGetNextParameter(Express::VARP loss) = 0;
+    virtual void profile(Express::VARP loss) = 0;
 
     static ParameterOptimizer* createSGD(std::shared_ptr<Express::Module> module, float lr, float momentum, float weightDecay, RegularizationMethod method);
     static ParameterOptimizer* createADAM(std::shared_ptr<Express::Module> module, float lr, float momentum, float momentum2, float weightDecay, float eps, RegularizationMethod method);

@@ -22,6 +22,7 @@ public:
     SGD(std::shared_ptr<Express::Module> module);
     virtual ~ SGD() = default;
     virtual std::map<Express::VARP, Express::VARP> onGetNextParameter(Express::VARP loss) override;
+    virtual void profile(Express::VARP loss) override;
 
     Express::VARP regularizeParameters(Express::VARP param, Express::VARP grad);
 
