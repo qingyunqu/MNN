@@ -126,6 +126,7 @@ GoogLenet::GoogLenet(){
     registerModel({conv1, conv2, conv3, incep1, incep2, incep3, incep4, incep5, incep6,
                    incep7, incep8, incep9});
     // registerModel({conv1, conv2, conv3});
+    setName("Googlenet");
 }
 
 std::vector<Express::VARP> GoogLenet::onForward(const std::vector<Express::VARP>& inputs) {

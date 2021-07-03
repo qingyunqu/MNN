@@ -83,7 +83,7 @@ void MobilenetV2Utils::train(std::shared_ptr<Module> model, const int numClasses
                 // turn model to train quant model
                 std::static_pointer_cast<PipelineModule>(model)->toTrainQuant(quantBits);
             }
-            for (int i = 0; i < trainIterations && i<5; i++) {
+            for (int i = 0; i < trainIterations && i<500; i++) {
                 AUTOTIME;
                 MNN_MEMORY_PROFILE("begin an iteration")
                 auto trainData  = trainDataLoader->next();
@@ -96,6 +96,8 @@ void MobilenetV2Utils::train(std::shared_ptr<Module> model, const int numClasses
 
                 auto predict = model->forward(_Convert(example.first[0], NC4HW4));
                 auto loss    = _CrossEntropy(predict, newTarget);
+//                loss->readMap<float>();
+//                continue;
 //                loss->readMap<float>();
 //                return;
                 // float rate   = LrScheduler::inv(0.0001, solver->currentStep(), 0.0001, 0.75);

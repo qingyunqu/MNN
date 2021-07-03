@@ -32,7 +32,7 @@ public:
     virtual Backend* onCreate() const override;
     virtual void onGabageCollect(int level) override;
     virtual float onGetMemoryInMB() override;
-private:
+//private:
     std::shared_ptr<BufferAllocator> mStaticAllocator;
     int mThreadNumber;
     int mTaskIndex;
@@ -60,6 +60,13 @@ public:
     virtual bool onAcquireBuffer(const Tensor* nativeTensor, StorageType storageType) override;
     virtual bool onReleaseBuffer(const Tensor* nativeTensor, StorageType storageType) override;
     virtual bool onClearBuffer() override;
+    virtual bool onRequireBufferFromOS(const Tensor* nativeTensor) override;
+    virtual bool onFreeBufferToOS(const Tensor* nativeTensor) override;
+    virtual bool onRequireBufferHybrid(const Tensor* nativeTensor, int hybrid_thres=MNN_HYBRID_DYNAMIC_THRESHOLD) override;
+    virtual bool onFreeBufferHybrid(const Tensor* nativeTensor, int hybrid_thres=MNN_HYBRID_DYNAMIC_THRESHOLD) override;
+    virtual void changeBufferType(BufferType bufferType) override;
+    virtual void setHeuristicStrategy(bool flag) override;
+    virtual void configHeuristicStrategy(std::string modelName, int batchsize) override;
     virtual void onCopyBuffer(const Tensor* srcTensor, const Tensor* dstTensor) const override;
     virtual std::pair<float, bool> onMeasure(const std::vector<Tensor*>& inputs, const std::vector<Tensor*>& outputs,
                                             const MNN::Op* op) override;
@@ -104,6 +111,9 @@ private:
     const CPURuntime* mRuntime;
     static std::map<OpType, CPUBackend::Creator*>* getCreatorMap();
     static std::map<OpType, CPUBackend::Creator*>* gCreator;
+    int mDynamicOutputCacheID = -1;
+    int mDynamicResizeID = -1;
+    bool mHeuristic = false;
 };
 
 #define REGISTER_CPU_OP_CREATOR(name, opType)     \

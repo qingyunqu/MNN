@@ -77,39 +77,44 @@ Express::VARP SGD::onComputeUpdateValue(Express::VARP param, Express::VARP grad)
 }
 
 std::map<Express::VARP, Express::VARP> SGD::onGetNextParameter(Express::VARP loss) {
-    printf("begin compute grad graph\n");
+    MNN_PRINT("%s:%s: begin compute grad graph\n", __FILE_NAME__, __FUNCTION__ );
     auto grad = OpGrad::grad(loss, trainable(), mGradBlockExprName);
-    printf("finish compute grad graph\n");
+    MNN_PRINT("%s:%s: finish compute grad graph\n", __FILE_NAME__, __FUNCTION__ );
     auto parameters = module()->parameters();
     std::vector<VARP> prepareCompute;
+//    int tot_size = 0;
+//    for (auto var: trainable()) {
+//        tot_size += var->getInfo()->size;
+//    }
+//    printf("trainable.size = %d\n", tot_size);
+//
     auto execOrder = Variable::getExecuteOrder({loss});
     std::map<EXPRP, VARP> paramExpr;
     for(auto param: parameters){
         paramExpr.insert(std::make_pair(param->expr().first, param));
     }
-    int insertPos = 0;
-    for(auto expr: execOrder) {
-        if (paramExpr.find(expr)!=paramExpr.end()) {
-            if (expr->get() != nullptr) {
-                prepareCompute.insert(prepareCompute.begin()+insertPos, paramExpr[expr]);
-                insertPos++;
-            } else {
-                prepareCompute.insert(prepareCompute.begin()+insertPos, grad[paramExpr[expr]]);
-            }
+    for (auto iter = execOrder.rbegin(); iter != execOrder.rend(); iter++) {
+        if (paramExpr.find(*iter) != paramExpr.end()) {
+            prepareCompute.emplace_back(grad[paramExpr[*iter]]);
         }
     }
+//    int untrainablesize = 0;
 //    for (auto iter : parameters) {
 //        if (iter->expr().first->get() != nullptr) {
+//            untrainablesize += iter->getInfo()->size;
 //            prepareCompute.emplace_back(iter);
 //        }
 //    }
+//    printf("untrainable.size = %d\n", untrainablesize);
 //    for (auto& iter : grad) {
 //        prepareCompute.emplace_back(iter.second);
 //    }
-    printf("prepareCompute.size() = %d\ttrainable.size() = %d\n", prepareCompute.size(), trainable().size());
-    printf("begin prepare compute\n");
+    MNN_PRINT("%s:%s: prepareCompute.size() = %d\ttrainable.size() = %d\n",  __FILE_NAME__, __FUNCTION__ , prepareCompute.size(), trainable().size());
+    MNN_PRINT("%s:%s: begin enableHeuristicAlloc\n", __FILE_NAME__, __FUNCTION__ );
+//    Variable::enableHeuristicAlloc(true);
+    MNN_PRINT("%s:%s: begin prepare compute\n", __FILE_NAME__, __FUNCTION__ );
     Variable::prepareCompute(prepareCompute);
-    printf("finish prepare compute & start read-map\n");
+    MNN_PRINT("%s:%s: finish prepare compute & start read-map\n", __FILE_NAME__, __FUNCTION__ );
     std::vector<VARP> replaceOp(prepareCompute.size());
     for (int i=0; i<prepareCompute.size(); ++i) {
         auto info = prepareCompute[i]->getInfo();
@@ -121,11 +126,14 @@ std::map<Express::VARP, Express::VARP> SGD::onGetNextParameter(Express::VARP los
         auto newVar = _Const(ptr, info->dim, info->order, info->type);
         replaceOp[i]= newVar;
     }
-    printf("finish read-map & start replace\n");
+    Variable::enableHeuristicAlloc(false);
+    MNN_PRINT("%s:%s: finish read-map & start replace\n", __FILE_NAME__, __FUNCTION__ );
     for (int i=0; i<prepareCompute.size(); ++i) {
+//        MNN_ASSERT(prepareCompute[i]->expr().first->outputSize() == replaceOp[i]->expr().first->outputSize())
         Variable::replace(prepareCompute[i], replaceOp[i]);
+//        MNN_PRINT("finish replace var[%d]\n", i)
     }
-    printf("finish replace & start compute update value\n");
+    MNN_PRINT("%s:%s: finish replace & start compute update value\n", __FILE_NAME__, __FUNCTION__ );
     for (auto& iter : grad) {
         // apply regularization
         MNN_MEMORY_PROFILE("\t")
@@ -137,7 +145,7 @@ std::map<Express::VARP, Express::VARP> SGD::onGetNextParameter(Express::VARP los
         auto newParameter = iter.first - updateValue;
         iter.second       = newParameter;
     }
-    printf("finish func %s\n", __FUNCTION__ );
+    MNN_PRINT("%s: finish func %s\n", __FILE_NAME__ , __FUNCTION__ );
     return grad;
 }
 

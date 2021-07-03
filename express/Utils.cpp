@@ -116,6 +116,7 @@ bool Utils::allocMemoryForHostTensor(Tensor* dest) {
     if (0 >= size) {
         return false;
     }
+//    MNN_PRINT("%s: alloc %d bytes\n", __FUNCTION__, size)
     dest->buffer().host = (uint8_t*)MNNMemoryAllocAlign(size, MNN_MEMORY_ALIGN_DEFAULT);
     return dest->buffer().host != nullptr;
 }
@@ -126,6 +127,8 @@ bool Utils::releaseMemoryForHostTensor(Tensor* dest) {
     if (TensorUtils::getDescribe(dest)->memoryType != Tensor::InsideDescribe::MEMORY_HOST) {
         return false;
     }
+    auto size = dest->size();
+
     MNNMemoryFreeAlign(dest->buffer().host);
     dest->buffer().host = nullptr;
     return true;

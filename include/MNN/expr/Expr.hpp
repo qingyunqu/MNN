@@ -161,6 +161,7 @@ public:
     static void compute(const std::vector<VARP>& vars, bool forceCPU = false);
     static void profileExecute(const VARP varp);
     static void clearCache(const std::vector<VARP>& vars);
+    static void enableHeuristicAlloc(bool flag);
 
     size_t linkNumber() const;
     const std::vector<WeakEXPRP>& toExprs() const;

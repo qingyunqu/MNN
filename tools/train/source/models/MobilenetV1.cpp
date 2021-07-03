@@ -110,6 +110,7 @@ MobilenetV1::MobilenetV1(int numClasses, float widthMult, int divisor) {
 
     registerModel({conv1, bn1, dropout, fc});
     registerModel(convBlocks);
+    setName("MobilenetV1");
 }
 
 std::vector<Express::VARP> MobilenetV1::onForward(const std::vector<Express::VARP> &inputs) {

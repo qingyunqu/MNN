@@ -62,6 +62,13 @@ public:
     static RuntimeInfo getRuntime();
 
     void profileCacheExecution(std::shared_ptr<ComputeCache> cache);
+    void setHeuristicAlloc(bool flag) {
+        mHeuristic = flag;
+    }
+    void configHeuristicStrategy(std::string modelName, int batchsize) {
+        mModelName = modelName;
+        mBatchsize = batchsize;
+    }
 private:
     void _makeCache(const std::vector<EXPRP>& outputs, bool forceCPU);
     void _create(const std::vector<EXPRP>& outputs, std::set<std::shared_ptr<Executor::ComputeCache>>&& inputCaches, std::set<std::shared_ptr<Expr::Inside>>&& inputNode, bool forceCPU);
@@ -73,6 +80,9 @@ private:
     std::pair<std::shared_ptr<Runtime>, MNNForwardType> mBackupRuntime;
     std::mutex mMutex;
     std::shared_ptr<Profiler> mProfiler;
+    bool mHeuristic = false;
+    std::string mModelName;
+    int mBatchsize = -1;
 };
 } // namespace Express
 } // namespace MNN

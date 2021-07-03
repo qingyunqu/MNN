@@ -19,6 +19,11 @@
 #include "Command.hpp"
 #include "NonCopyable.hpp"
 
+// threshold of hybrid dynamic allocate buffer, only used by ops' outputs, default 4MB == 4*1024*1024 == 1<<22
+// if(size < threshold): from memory pool
+// else: from os
+#define MNN_HYBRID_DYNAMIC_THRESHOLD 1<<22
+
 namespace MNN {
 
 struct Op;
@@ -70,6 +75,13 @@ public:
          - releases memory when `onClearBuffer` is called or when the backend is deleted.
          */
         DYNAMIC_SEPERATE
+    };
+
+
+    enum BufferType {
+        DYNAMIC_OTHER,
+        DYNAMIC_OUTPUT,
+        DYNAMIC_RESIZE
     };
 
 public:
@@ -154,6 +166,15 @@ public:
      */
     virtual bool onClearBuffer() = 0;
 
+    virtual bool onRequireBufferFromOS(const Tensor* tensor)  = 0;
+    virtual bool onFreeBufferToOS(const Tensor* tensor)  = 0;
+    virtual bool onRequireBufferHybrid(const Tensor* tensor, int hybrid_thres=MNN_HYBRID_DYNAMIC_THRESHOLD) = 0;
+    virtual bool onFreeBufferHybrid(const Tensor* tensor, int hybrid_thres=MNN_HYBRID_DYNAMIC_THRESHOLD) = 0;
+
+    BufferType mBufferType = BufferType::DYNAMIC_OTHER;
+    virtual void changeBufferType(BufferType bufferType) = 0;
+    virtual void setHeuristicStrategy(bool flag) = 0;
+    virtual void configHeuristicStrategy(std::string modelName, int batchsize) = 0;
     /**
      * @brief copy buffer from tensor to tensor.
      * @param srcTensor source buffer provider.

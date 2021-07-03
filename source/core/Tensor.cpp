@@ -111,6 +111,11 @@ Tensor::Tensor(const Tensor* tensor, DimensionType type, bool allocMemory) {
 }
 
 Tensor::~Tensor() {
+    if (mOwmDynamicMemory) {
+        MNN_PRINT("call ~Tenosr() due to mOwmDynamicMemory\n")
+        MNN_ASSERT(mCacheID != -1 && mDescribe->extra.offset == 0)
+        MNNMemoryFreeAlign(mBuffer.host - mDescribe->extra.offset);
+    }
     if (mBuffer.type.code == halide_type_handle) {
         auto handles = (void**)mBuffer.host;
         for (int i = 0; i < elementSize(); ++i) {
@@ -121,6 +126,7 @@ Tensor::~Tensor() {
     }
     if (mDescribe->memoryType == InsideDescribe::MEMORY_HOST) {
         if (nullptr != mBuffer.host) {
+//            MNN_PRINT("in %s: call MNNMemoryFreeAlign to free %d bytes\n", __FUNCTION__, size())
             MNNMemoryFreeAlign(mBuffer.host);
         }
     }

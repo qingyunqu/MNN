@@ -156,6 +156,7 @@ MobilenetV2::MobilenetV2(int numClasses, float widthMult, int divisor) {
 
     registerModel({firstConv, lastConv, dropout, fc});
     registerModel(bottleNeckBlocks);
+    setName("MobilenetV2");
 }
 
 std::vector<Express::VARP> MobilenetV2::onForward(const std::vector<Express::VARP> &inputs) {

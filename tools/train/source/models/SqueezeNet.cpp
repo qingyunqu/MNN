@@ -88,6 +88,7 @@ Squeezenet::Squeezenet(){
     registerModel({conv1, conv2, fire1, fire2, fire3, fire4, fire5, fire6,
                    fire7, fire8});
     // registerModel({conv1, conv2, conv3});
+    setName("Squeezenet");
 }
 
 std::vector<Express::VARP> Squeezenet::onForward(const std::vector<Express::VARP>& inputs) {

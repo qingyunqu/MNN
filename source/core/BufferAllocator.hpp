@@ -12,8 +12,11 @@
 #include <map>
 #include <memory>
 #include <vector>
+#include <string>
+#include <fstream>
 #include "MNNMemoryUtils.h"
 #include "NonCopyable.hpp"
+#define TEST() printf("test\n");
 
 namespace MNN {
 
@@ -40,6 +43,7 @@ public:
      * @brief deinit buffer allocator. frees all allocated memories.
      */
     ~BufferAllocator() {
+//        MNN_PRINT("%s: call %s\n",mName.c_str(), __FUNCTION__ )
         release();
     }
 
@@ -53,6 +57,11 @@ public:
      * @sa release
      */
     std::pair<void*, int> alloc(int size, bool seperate = false);
+
+    std::pair<void*, int> allocHeuristically(std::string id, int size);
+    bool freeHeuristically(std::string id, std::pair<void*, int> pointer);
+    static std::pair<void*, int> allocaFromOS(int size);
+    static bool freeToOS(std::pair<void*, int>);
 
     /**
      * @brief mark CHUNK pointer as reusable.
@@ -78,6 +87,8 @@ public:
         return mTotalSize;
     }
 
+    void debugUsage();
+
     /*
      For multi thread case,
      we must assume that the memory use by different thread don't conflict
@@ -90,21 +101,32 @@ public:
     void barrierEnd();
     void beginGroup();
     void endGroup();
+    void setName(std::string name) {
+        mName = std::move(name);
+    }
+    void setHeuristicStrategy(std::string model, int batch);
 
 private:
+    // MNN通过node组织成了一个树形结构，然后只保留叶子结点的索引，叶子结点通过parent指针向上找到根结点
+    // 修改后通过双向链表的形式组织，增加了合并可用内存的可能性
     class Node {
     public:
         ~Node();
         std::pair<void*, int> pointer;
         std::shared_ptr<Node> parent = nullptr;
+        std::shared_ptr<Node> left = nullptr, right = nullptr;
         int32_t size;
         int16_t useCount = 0;
+        // 每个node至多被拆分成2个node，一个used一个freed（尽管freed可能被继续拆分）
+        // usecount表示当前node是否被拆分出来一个used + freed是否被拆分成了used
+        // 等价于左边used是否被继续使用了 + 右边freed是否被继续使用了
+        // 等价于左右【直接指向自己】的child节点中有多少被使用了
         Allocator* outside = nullptr;
     };
 
     typedef std::multimap<size_t, std::shared_ptr<Node>> FREELIST;
 
-    static void returnMemory(FREELIST* list, std::shared_ptr<Node> node, bool permitMerge = true);
+    void returnMemory(FREELIST* list, std::shared_ptr<Node> node, bool permitMerge = true);
     std::pair<void*, int> getFromFreeList(FREELIST* list, int size, bool permiteSplit = true);
 
     std::map<std::pair<void*, int>, std::shared_ptr<Node>> mUsedList;
@@ -115,6 +137,10 @@ private:
     std::vector<std::shared_ptr<FREELIST>> mGroups;
     std::shared_ptr<Allocator> mAllocator;
     int mAlign;
+    std::string mName = "static";
+    std::map<std::string, size_t> mHeuristicStrategy;
+    void* mHeuristicPtr;
+    size_t mHeuristicSize;
 };
 } // namespace MNN
 #endif

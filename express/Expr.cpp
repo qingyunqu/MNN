@@ -646,6 +646,9 @@ void Variable::informDirty() {
         e->setVisited(false);
     }
 }
+void Variable::enableHeuristicAlloc(bool flag) {
+    ExecutorScope::Current()->setHeuristicAlloc(flag);
+}
 void Variable::prepareCompute(const std::vector<VARP>& vars, bool forceCpu) {
     std::vector<EXPRP> exprs;
     for (auto v : vars) {

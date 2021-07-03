@@ -9,6 +9,13 @@
 #include "core/BufferAllocator.hpp"
 #include "core/Macro.h"
 
+//#define DEBUG_EXECUTION_DETAIL
+
+#ifdef DEBUG_EXECUTION_DETAIL
+#define MNN_DEBUG_PRINT(format, ...) MNN_PRINT(format, ##__VA_ARGS__)
+#else
+#define MNN_DEBUG_PRINT(format, ...)
+#endif
 //#define DUMP_USAGE
 //#define MNN_DEBUG_MEMORY
 namespace MNN {
@@ -21,6 +28,7 @@ public:
         // Do nothing
     }
     virtual std::pair<void*, int> onAlloc(int size) {
+        MNN_DEBUG_PRINT("\tfail to reuse memory, require from OS with %d byte\n", size)
         return std::make_pair(MNNMemoryAllocAlign(size, MNN_MEMORY_ALIGN_DEFAULT), 0);
     }
     virtual void onRelease(std::pair<void*, int> ptr) {
@@ -58,11 +66,13 @@ std::shared_ptr<BufferAllocator::Allocator> BufferAllocator::Allocator::createRe
 }
 
 BufferAllocator::Node::~Node() {
+    MNN_DEBUG_PRINT("call %s\n", __FUNCTION__ )
     if (nullptr == parent) {
         outside->onRelease(pointer);
     }
 }
 std::pair<void*, int> BufferAllocator::alloc(int size, bool seperate) {
+    MNN_DEBUG_PRINT("\t%s: call %s\n", mName.c_str(), __FUNCTION__ )
 #ifdef DUMP_USAGE
     auto memoryUsed = size / 1024.0f / 1024.0f;
     MNN_PRINT("Alloc: %f\n", memoryUsed);
@@ -76,11 +86,15 @@ std::pair<void*, int> BufferAllocator::alloc(int size, bool seperate) {
         if (nullptr != pointer.first) {
             return pointer;
         }
+        if (mName == "dynamic" && mCurrentFreeList == nullptr) {
+            MNN_DEBUG_PRINT("try get %d bytes dynamic memory \n", UP_DIV(size, mAlign) * mAlign)
+        }
         pointer = getFromFreeList(&mFreeList, size);
         if (nullptr != pointer.first) {
             return pointer;
         }
     }
+    MNN_DEBUG_PRINT("\t%s: fail to get from free list, allocate otherwise\n", mName.c_str());
 
     // alloc otherwise
     pointer = mAllocator->onAlloc(size);
@@ -102,7 +116,67 @@ std::pair<void*, int> BufferAllocator::alloc(int size, bool seperate) {
     return pointer;
 }
 
+void BufferAllocator::setHeuristicStrategy(std::string model, int batch) {
+    release();
+    char filename[50];
+    sprintf(filename, "%s.%d.txt", model.c_str(), batch);
+    MNN_DEBUG_PRINT("%s: %s: filename = %s\n", mName.c_str(), __FUNCTION__ , filename)
+    std::ifstream ifs(filename, std::ios::in);
+    std::string s;
+    size_t a;
+    while (ifs >> s >> a) {
+        if (s == "maxsize") {
+            mHeuristicSize = a;
+        } else {
+            mHeuristicStrategy[s] = a;
+        }
+    }
+    ifs.close();
+    MNN_DEBUG_PRINT("%s: %s: maxsize = %d\n", mName.c_str(), __FUNCTION__ , mHeuristicSize)
+    auto heuristicPool = alloc(mHeuristicSize);
+    mHeuristicPtr = heuristicPool.first;
+}
+
+std::pair<void*, int> BufferAllocator::allocHeuristically(std::string id, int size) {
+    MNN_DEBUG_PRINT("\t%s: call %s\n",mName.c_str(), __FUNCTION__ )
+    debugUsage();
+    if (mHeuristicStrategy.empty()) {
+        return alloc(size, false);
+    }
+    if (mHeuristicStrategy.find(id) == mHeuristicStrategy.end()) {
+        return alloc(size, false);
+    }
+
+    return std::make_pair(mHeuristicPtr, mHeuristicStrategy[id]);
+}
+
+bool BufferAllocator::freeHeuristically(std::string id, std::pair<void *, int> pointer) {
+    MNN_DEBUG_PRINT("\t call %s\n", __FUNCTION__ )
+    if (mHeuristicStrategy.empty()) {
+        return free(pointer);
+    }
+    if (mHeuristicStrategy.find(id) == mHeuristicStrategy.end()) {
+        return free(pointer);
+    }
+    return true;
+}
+
+std::pair<void*, int> BufferAllocator::allocaFromOS(int size) {
+    return std::make_pair(MNNMemoryAllocAlign(size, MNN_MEMORY_ALIGN_DEFAULT), 0);
+}
+
+bool BufferAllocator::freeToOS(std::pair<void *, int> ptr) {
+    MNN_ASSERT(ptr.second == 0);
+    MNNMemoryFreeAlign(ptr.first);
+    return true;
+}
+
 void BufferAllocator::returnMemory(FREELIST* listP, std::shared_ptr<Node> node, bool permitMerge) {
+//    MNN_PRINT("\tcall %s: %s\n", mName.c_str(), __FUNCTION__ )
+    if (*listP == mFreeList && mName == "dynamic") {
+        MNN_DEBUG_PRINT("try return %d bytes to freelist\n", node->size)
+    }
+
     auto& list = *listP;
     list.insert(std::make_pair(node->size, node));
     // update parent use count
@@ -136,6 +210,7 @@ void BufferAllocator::returnMemory(FREELIST* listP, std::shared_ptr<Node> node, 
 
 bool BufferAllocator::free(std::pair<void*, int> pointer) {
     // get node
+    MNN_DEBUG_PRINT("\t%s: call %s\n", mName.c_str(), __FUNCTION__ )
     auto x = mUsedList.find(pointer);
     if (x == mUsedList.end()) {
         MNN_ASSERT(false);
@@ -149,6 +224,7 @@ bool BufferAllocator::free(std::pair<void*, int> pointer) {
     } else {
         returnMemory(&mFreeList, node);
     }
+    debugUsage();
 #ifdef DUMP_USAGE
     auto memoryUsed = x->second->size / 1024.0f / 1024.0f;
     MNN_PRINT("Free: %f\n", memoryUsed);
@@ -156,8 +232,22 @@ bool BufferAllocator::free(std::pair<void*, int> pointer) {
     return true;
 }
 
+void BufferAllocator::debugUsage() {
+    size_t used_size = 0, free_size = 0;
+    for(auto iter: mUsedList) {
+        used_size += iter.second->size;
+    }
+    for (auto iter: mFreeList) {
+        free_size += iter.first;
+    }
+    MNN_DEBUG_PRINT("%s: %s: mUsedList.size = %d with memsize = %d, mFreeList.size = %d with memsize = %d\n",
+                    mName.c_str(), __FUNCTION__ , mUsedList.size(), used_size, mFreeList.size(), free_size)
+}
+
 void BufferAllocator::release(bool allRelease) {
+    MNN_DEBUG_PRINT("%s: %s: %d\n", mName.c_str(), __FUNCTION__ , allRelease);
     MNN_ASSERT(mGroups.empty());
+    debugUsage();
     if (allRelease) {
         mUsedList.clear();
         mFreeList.clear();
@@ -198,15 +288,31 @@ void BufferAllocator::endGroup() {
 }
 
 std::pair<void*, int> BufferAllocator::getFromFreeList(FREELIST* list, int size, bool permiteSplit) {
+//    MNN_PRINT("\t%s: call %s\n", mName.c_str(), __FUNCTION__ )
 #ifdef MNN_DEBUG_MEMORY
     return std::make_pair(nullptr, 0);
 #endif
 
     // get node larger than size
+    int tot_size = 0;
+    for (auto iter: *list) {
+        tot_size += iter.first;
+    }
+    MNN_DEBUG_PRINT("\t%s: free list.size = %d, tot_size = %d\n", mName.c_str(), list->size(), tot_size)
     auto x = list->lower_bound(size);
     if (x == list->end()) {
+        if (list->size()) {
+            auto max_size = std::max_element(
+                        list->begin(), list->end(),
+                        [](const std::pair<size_t, std::shared_ptr<Node>>& p1, const std::pair<size_t, std::shared_ptr<Node>>& p2){
+                            return p1.first < p2.first;
+                        }
+                    )->first;
+            MNN_DEBUG_PRINT("\t%s: free list is not empty with max_size = %d, but fail to match size = %d\n", mName.c_str(), int(max_size), size)
+        }
         return std::make_pair(nullptr, 0);
     }
+    MNN_DEBUG_PRINT("\t%s: match size %d with %d\n", mName.c_str(), size, int(x->first))
 
     // update parent use count
     auto pointer = x->second->pointer;

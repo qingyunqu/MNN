@@ -126,6 +126,7 @@ CPUBackend::CPUBackend(const CPURuntime* runtime, MNNForwardType type) : Backend
     mCheckNAN = runtime->mFlags == MNN_CPU_CHECK_NAN;
     std::shared_ptr<BufferAllocator::Allocator> defaultAlloc(BufferAllocator::Allocator::createRecurse(runtime->mStaticAllocator.get()));
     mDynamicAllocator.reset(new BufferAllocator(defaultAlloc));
+    mDynamicAllocator->setName("dynamic");
     mStaticAllocator = runtime->mStaticAllocator;
 }
 bool CPUBackend::supportDot() const {
@@ -168,13 +169,28 @@ bool CPUBackend::allocBuffer(int size, Tensor* dest, StorageType storageType) {
     auto& buffer = dest->buffer();
     auto des = TensorUtils::getDescribe(dest);
     std::pair<void*, int> points;
+    std::string id;
+    if (mBufferType == DYNAMIC_OUTPUT) {
+        mDynamicOutputCacheID = dest->cacheID();
+        id = std::to_string(mDynamicOutputCacheID);
+    } else if (mBufferType == DYNAMIC_RESIZE) {
+        id = std::to_string(mDynamicOutputCacheID) + ":" + std::to_string(mDynamicResizeID);
+        mDynamicResizeID++;
+    }
+    if (!id.empty()) {
+        dest->setHeuristicID(id);
+    }
     switch (storageType) {
         case STATIC: {
             points = mStaticAllocator->alloc(size, false);
             break;
         }
         case DYNAMIC: {
-            points = mDynamicAllocator->alloc(size, false);
+            if (id.empty() || ! mHeuristic) {
+                points = mDynamicAllocator->alloc(size, false);
+            } else {
+                points = mDynamicAllocator->allocHeuristically(id, size);
+            }
             break;
         }
         case DYNAMIC_SEPERATE: {
@@ -205,6 +221,9 @@ bool CPUBackend::onAcquireBuffer(const MNN::Tensor* nativeTensorConst, StorageTy
     }
     //FUNC_PRINT_ALL(nativeTensorConst, p);
     auto nativeTensor = (Tensor*)nativeTensorConst;
+//    if (storageType == DYNAMIC) {
+//        MNN_PRINT("\talloc dynamic memrory for tensor[%d]\n", nativeTensor->ID())
+//    }
     auto size = nativeTensor->size();
     return allocBuffer(size, nativeTensor, storageType);
 }
@@ -227,7 +246,12 @@ bool CPUBackend::onReleaseBuffer(const MNN::Tensor* nativeTensor, StorageType st
         mStaticAllocator->free(pointer);
         return true;
     }
-    mDynamicAllocator->free(pointer);
+    if (mHeuristic) {
+        mDynamicAllocator->freeHeuristically(((Tensor*)nativeTensor)->getHeuristicID(), pointer);
+    } else {
+        mDynamicAllocator->free(pointer);
+    }
+
     return true;
 }
 
@@ -329,6 +353,85 @@ Execution* CPUBackend::onCreate(const std::vector<Tensor*>& inputs, const std::v
 bool CPUBackend::onClearBuffer() {
     mDynamicAllocator->release(true);
     return true;
+}
+
+bool CPUBackend::onRequireBufferFromOS(const Tensor *nativeTensor) {
+    auto dest = (Tensor*)nativeTensor;
+    auto size = nativeTensor->size();
+    if (size <= 0) {
+        MNN_ASSERT(false);
+        return false;
+    }
+    auto& buffer = dest->buffer();
+    auto des = TensorUtils::getDescribe(dest);
+    std::pair<void*, int> points = BufferAllocator::allocaFromOS(size);
+    if (nullptr == points.first) {
+        MNN_ERROR("Alloc buffer error for cpu backend\n");
+        return false;
+    }
+    buffer.host = (uint8_t*)points.first + points.second;
+    des->extra.offset = points.second;
+    if (buffer.type.code == halide_type_handle) {
+        MNN_PRINT("tensor[%d].type is halide_type_handle\n", nativeTensor->cacheID())
+        // For handle we needn't recycle the buffer, use extra as hanleFreeFunction
+        ::memset(buffer.host, 0, size);
+        des->extra.handleFreeFunction = (decltype(des->extra.handleFreeFunction))free;
+    }
+    dest->setOwnDynamicMemory(true);
+    return true;
+}
+
+bool CPUBackend::onFreeBufferToOS(const Tensor *nativeTensor) {
+    auto dest = (Tensor*)nativeTensor;
+    if (dest == nullptr || nullptr == dest->buffer().host) {
+        return false;
+    }
+    auto des = TensorUtils::getDescribe(dest);
+    std::pair<void*, int> pointer;
+    pointer.second = des->extra.offset;
+    pointer.first = (uint8_t*)dest->buffer().host - des->extra.offset;
+    dest->setOwnDynamicMemory(false);
+    return BufferAllocator::freeToOS(pointer);
+}
+
+bool CPUBackend::onRequireBufferHybrid(const Tensor *nativeTensor, int hybrid_thres) {
+    auto size = nativeTensor->size();
+    if (size <= 0) {
+        MNN_ASSERT(false);
+        return false;
+    } else if (size < hybrid_thres) {
+        return onAcquireBuffer(nativeTensor, DYNAMIC);
+    } else {
+        return onRequireBufferFromOS(nativeTensor);
+    }
+}
+
+bool CPUBackend::onFreeBufferHybrid(const Tensor *nativeTensor, int hybrid_thres) {
+    auto dest = (Tensor*)nativeTensor;
+    auto size = nativeTensor->size();
+    if (dest == nullptr || nullptr == dest->buffer().host || size < 0) {
+        return false;
+    } else if (size < hybrid_thres) {
+        return onReleaseBuffer(nativeTensor, DYNAMIC);
+    } else {
+        return onFreeBufferToOS(nativeTensor);
+    }
+}
+
+void CPUBackend::changeBufferType(BufferType bufferType) {
+    mBufferType = bufferType;
+    if (mBufferType == DYNAMIC_RESIZE) {
+        mDynamicResizeID = 0;
+    }
+}
+
+void CPUBackend::setHeuristicStrategy(bool flag) {
+    mHeuristic = flag;
+}
+
+void CPUBackend::configHeuristicStrategy(std::string modelName, int batchsize) {
+    MNN_PRINT("%s: %s, %d\n", __FUNCTION__ ,modelName.c_str(), batchsize);
+    mDynamicAllocator->setHeuristicStrategy(modelName, batchsize);
 }
 
 std::pair<int, int> CPUBackend::multiThreadDivide(int size) const {

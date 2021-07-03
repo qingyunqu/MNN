@@ -11,6 +11,7 @@
 #include <vector>
 #include "DemoUnit.hpp"
 #include "MobilenetV2.hpp"
+#include "MobilenetV1.hpp"
 #include "GoogLeNet.hpp"
 #include "SqueezeNet.hpp"
 #include "Alexnet.hpp"
@@ -45,7 +46,7 @@ public:
             }
         } else if (argc == 6) {
             std::string modelname = argv[1];
-            if (modelname == "MobilenetV2" || modelname == "Alexnet" || modelname == "Squeezenet" || modelname == "Googlenet") {
+            if (modelname == "MobilenetV2" || modelname == "MobilenetV1" || modelname == "Alexnet" || modelname == "Squeezenet" || modelname == "Googlenet") {
                 std::string trainImagesFolder = argv[2];
                 std::string trainImagesTxt = argv[3];
                 std::string testImagesFolder = argv[2];
@@ -57,6 +58,9 @@ public:
                 if (modelname == "MobilenetV2") {
                     numClass = 1001;
                     model = std::make_shared<MobilenetV2>();
+                } else if (modelname == "MobilenetV1") {
+                    numClass = 1001;
+                    model = std::make_shared<MobilenetV1>();
                 } else if (modelname == "Alexnet") {
                     model = std::make_shared<Alexnet>();
                 } else if (modelname == "Squeezenet") {

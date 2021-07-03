@@ -48,6 +48,7 @@ Alexnet:: Alexnet() {
     dropout1.reset(NN::Dropout(0.5));
     dropout2.reset(NN::Dropout(0.5));
     registerModel({conv1, conv2, conv3, conv4, conv5, ip1, ip2, dropout1,dropout2});
+    setName("Alexnet");
 }
 
 std::vector<Express::VARP> Alexnet::onForward(const std::vector<Express::VARP>& inputs) {

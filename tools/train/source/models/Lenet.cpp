@@ -27,6 +27,7 @@ Lenet::Lenet() {
     ip2.reset(NN::Linear(500, 10));
     dropout.reset(NN::Dropout(0.5));
     registerModel({conv1, conv2, ip1, ip2, dropout});
+    setName("Lenet");
 }
 
 std::vector<Express::VARP> Lenet::onForward(const std::vector<Express::VARP>& inputs) {

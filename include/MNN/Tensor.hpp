@@ -10,6 +10,7 @@
 #define Tensor_hpp
 
 #include <vector>
+#include <string>
 #include <MNN/HalideRuntime.h>
 #include <MNN/MNNDefine.h>
 #define MNN_MAX_TENSOR_DIM 6
@@ -261,8 +262,17 @@ public:
     inline void setCacheID(int id) {
         mCacheID = id;
     }
+    inline void setHeuristicID(std::string id) {
+        mHeuristicID = id;
+    }
+    inline std::string getHeuristicID() {
+        return mHeuristicID;
+    }
     inline int cacheID() const {
         return mCacheID;
+    }
+    inline void setOwnDynamicMemory(bool own) {
+        mOwmDynamicMemory = own;
     }
 
 public:
@@ -282,6 +292,8 @@ private:
     struct InsideDescribe* mDescribe;
     int mID = -1;
     int mCacheID = -1;
+    std::string mHeuristicID = "";
+    bool mOwmDynamicMemory = false;
 
 private:
     static int uniqueID;

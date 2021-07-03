@@ -37,14 +37,14 @@ public:
                       std::string testImagesFolder, std::string testImagesTxt,
                       const int batchsize = -1, const int microBatchsize = -1,
                       const int trainQuantDelayEpoch = 10, const int quantBits = 8) {
-        auto modelMap1 = Express::Variable::load("mnist.snapshot1.mnn");
-        auto modelMap2 = Express::Variable::load("mnist.snapshot1.mnn");
-        auto modelMap3 = Express::Variable::load("mnist.snapshot1.mnn");
-        for (int i = 0; i < modelMap1.size(); ++i) {
-            modelMap3[i]->input((modelMap1[i] + modelMap2[i]) / _Scalar<float>(2));
-        }
-        Express::Variable::save(modelMap3, "mnist.snapshot.agg.mnn");
-        return;
+//        auto modelMap1 = Express::Variable::load("mnist.snapshot1.mnn");
+//        auto modelMap2 = Express::Variable::load("mnist.snapshot1.mnn");
+//        auto modelMap3 = Express::Variable::load("mnist.snapshot1.mnn");
+//        for (int i = 0; i < modelMap1.size(); ++i) {
+//            modelMap3[i]->input((modelMap1[i] + modelMap2[i]) / _Scalar<float>(2));
+//        }
+//        Express::Variable::save(modelMap3, "mnist.snapshot.agg.mnn");
+//        return;
 
         auto exe = Executor::getGlobalExecutor();
         BackendConfig config;
@@ -61,6 +61,8 @@ public:
         } else {
             trainBatchSize = trainMicroBatchsize = 8;
         }
+        exe->configHeuristicStrategy(model->name(), trainMicroBatchsize);
+
         std::shared_ptr<MicroSGD> solver(new MicroSGD(model, trainBatchSize, trainMicroBatchsize));
         solver->setMomentum(0.9f);
         // solver->setMomentum2(0.99f);
@@ -73,7 +75,8 @@ public:
         std::vector<float> scales = {1/127.5, 1/127.5, 1/127.5};
         std::vector<float> cropFraction = {0.875, 0.875}; // center crop fraction for height and width
         bool centerOrRandomCrop = false; // true for random crop
-        std::shared_ptr<ImageDataset::ImageConfig> datasetConfig(ImageDataset::ImageConfig::create(converImagesToFormat, resizeHeight, resizeWidth, scales, means,cropFraction, centerOrRandomCrop));
+        std::shared_ptr<ImageDataset::ImageConfig> datasetConfig(
+                ImageDataset::ImageConfig::create(converImagesToFormat, resizeHeight, resizeWidth, scales, means,cropFraction, centerOrRandomCrop));
         bool readAllImagesToMemory = false;
         auto trainDataset = ImageDataset::create(trainImagesFolder, trainImagesTxt, datasetConfig.get(), readAllImagesToMemory);
         auto testDataset = ImageDataset::create(testImagesFolder, testImagesTxt, datasetConfig.get(), readAllImagesToMemory);
@@ -115,7 +118,6 @@ public:
         }
 
         for (int epoch = 0; epoch < 50; ++epoch) {
-            break;
             model->clearCache();
             exe->gc(Executor::FULL);
             exe->resetProfile();
@@ -128,13 +130,13 @@ public:
                     // turn model to train quant model
                     std::static_pointer_cast<PipelineModule>(model)->toTrainQuant(quantBits);
                 }
-                for (int i = 0; i < 25 * trainBatchSize / trainMicroBatchsize; i++) {
+                for (int i = 0; i < 5; i++) {
                     if (i % trainIterations == 0) {
                         trainDataLoader->reset();
                     }
                     AUTOTIME;
                     MNN_MEMORY_PROFILE("begin an iteration")
-                    printf("begin an iteration\n");
+                    MNN_PRINT("begin an iteration %d\n", i);
                     auto trainData  = trainDataLoader->next();
                     auto example    = trainData[0];
 
@@ -147,6 +149,8 @@ public:
                     auto loss    = _CrossEntropy(predict, newTarget);
                     // float rate   = LrScheduler::inv(0.0001, solver->currentStep(), 0.0001, 0.75);
                     float rate = 1e-5;
+//                    loss->readMap<float>();
+//                    return;
                     solver->setLearningRate(rate);
 //                if (solver->currentStep() % 10 == 0) {
 //                    std::cout << "train iteration: " << solver->currentStep();
@@ -155,7 +159,7 @@ public:
 //                }
                     solver->step(loss);
 //                    loss->readMap<float>();
-                    return;
+//                    return;
                 }
                 return;
             }

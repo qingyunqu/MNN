@@ -72,11 +72,13 @@ MNN_ERROR("Check failed: %s ==> %s\n", #success, #log); \
 
 //memory profiler
 #ifdef __linux__
-#define MNN_MEMORY_PROFILE(extra) \
+#define MNN_MEMORY_PROFILE(format, ...) \
     {                          \
         char s[200];          \
         sprintf(s, "/proc/%d/statm", getpid()); \
-        FILE* fin = fopen(s, "r");              \
+        FILE* fin = fopen(s, "r");      \
+        char extra[200];                 \
+        sprintf(extra, format, ##__VA_ARGS__);\
         if(fin) {               \
             fgets(s, 100, fin); \
             FILE* fout = fopen("memory_profile.out", "a"); \
@@ -89,7 +91,7 @@ MNN_ERROR("Check failed: %s ==> %s\n", #success, #log); \
         }\
     }
 #else
-#define MNN_MEMORY_PROFILE(extra)
+#define MNN_MEMORY_PROFILE(format, ...)
 #endif // MNN_MEMORY_PROFILE
 
 inline uint64_t MNN_TIME() {
